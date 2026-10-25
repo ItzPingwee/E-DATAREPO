@@ -3,34 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-DATA Visual Constructor</title>
+    <title>E-DATA Visual Simulator</title>
     <style>
-        body { background-color: #1a1a24; color: #ffffff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .contenedor { display: flex; gap: 20px; width: 100%; max-width: 1000px; flex-wrap: wrap; }
-        .tarjeta { background-color: #2a2a36; padding: 25px; border-radius: 12px; flex: 1; min-width: 300px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
-        h1, h2, h3 { color: #4CAF50; margin-top: 0; }
-        select, button, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; box-sizing: border-box; }
-        select, input[type="number"] { background-color: #3b3b4d; color: white; }
-        .btn-accion { background-color: #4CAF50; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-accion:hover:not(:disabled) { background-color: #45a049; }
-        .btn-accion:disabled { background-color: #888; cursor: wait; }
-        .btn-agregar { background-color: #2196F3; }
-        .btn-agregar:hover { background-color: #1976D2; }
-        .btn-ia { background-color: #9C27B0; margin-top: 15px; }
-        .btn-ia:hover:not(:disabled) { background-color: #7B1FA2; }
-        .item-casa { background-color: #1e1e2f; padding: 10px; margin-bottom: 8px; border-left: 4px solid #2196F3; font-size: 14px; border-radius: 4px; }
-        .dinero { color: #4CAF50; font-size: 28px; font-weight: bold; }
-        .ia-box { background-color: #1e1e2f; padding: 15px; margin-top: 15px; border: 1px solid #9C27B0; border-radius: 8px; color: #E1BEE7; font-style: italic; display: none; }
-        .vampiro-item { background-color: #3b3b4d; padding: 10px; margin: 8px 0; border-left: 4px solid #ff4d4d; border-radius: 4px; }
+        body { margin: 0; height: 100vh; display: flex; font-family: 'Segoe UI', sans-serif; background-color: #0b0c10; color: #ffffff; overflow: hidden; }
+        
+        /* PANEL IZQUIERDO */
+        #panel-lateral { width: 380px; min-width: 380px; background-color: #1f2833; padding: 20px; overflow-y: auto; border-right: 2px solid #45a29e; transition: margin-left 0.3s ease; position: relative; z-index: 10; display: flex; flex-direction: column; box-sizing: border-box; }
+        #panel-lateral.minimized { margin-left: -380px; }
+        
+        /* BOTÓN FLOTANTE INDEPENDIENTE */
+        #btn-toggle { position: fixed; left: 380px; top: 20px; background: #45a29e; color: #0b0c10; border: none; width: 40px; height: 40px; border-radius: 0 8px 8px 0; cursor: pointer; font-weight: bold; font-size: 18px; z-index: 999; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        #panel-lateral.minimized ~ #btn-toggle { left: 0; }
+        
+        .header-panel { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #45a29e; padding-bottom: 10px; margin-bottom: 15px; }
+        .header-panel h2 { margin: 0; color: #66fcf1; font-size: 20px; }
+
+        /* ESTILOS DE FORMULARIO */
+        .tarjeta { background-color: #0b0c10; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        label { font-size: 13px; color: #c5c6c7; }
+        select, input[type="number"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border-radius: 6px; border: 1px solid #45a29e; background-color: #1f2833; color: white; box-sizing: border-box; }
+        .btn-accion { width: 100%; background-color: #45a29e; color: #0b0c10; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .btn-accion:hover:not(:disabled) { background-color: #66fcf1; box-shadow: 0 0 10px rgba(102, 252, 241, 0.5); }
+        .btn-accion:disabled { background-color: #555; color: #888; cursor: not-allowed; box-shadow: none; }
+        .btn-ia { background-color: #9C27B0; color: white; border: 1px solid #E1BEE7; }
+        .btn-ia:hover:not(:disabled) { background-color: #ba68c8; box-shadow: 0 0 10px rgba(186, 104, 200, 0.5); }
+
+        .dinero { color: #66fcf1; font-size: 22px; font-weight: bold; }
+        .ia-box { background: rgba(156, 39, 176, 0.1); padding: 15px; margin-top: 10px; border-left: 4px solid #9C27B0; border-radius: 4px; font-style: italic; font-size: 14px; display: none; }
+        .vampiro-item { background: rgba(255, 77, 77, 0.1); padding: 8px; margin: 5px 0; border-left: 3px solid #ff4d4d; border-radius: 4px; font-size: 13px; }
+
+        /* PANEL DERECHO (VISTA 3D/PLANO NEÓN) */
+        #panel-vista { flex: 1; padding: 30px; background: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%); overflow-y: auto; position: relative; transition: width 0.3s ease; }
+        .titulo-vista { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: rgba(255,255,255,0.2); font-size: 40px; font-weight: 900; letter-spacing: 5px; margin: 0; pointer-events: none; }
+        .plano-casa { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; height: calc(100% - 60px); margin-top: 50px; }
+        
+        .habitacion-grid { background: rgba(31, 40, 51, 0.4); backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .habitacion-grid h3 { margin: 0 0 15px 0; color: #c5c6c7; font-weight: normal; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+        
+        #grid-Cocina { border-top: 3px solid #66fcf1; box-shadow: inset 0 10px 20px -10px rgba(102,252,241,0.2); }
+        #grid-Sala { border-top: 3px solid #ba68c8; box-shadow: inset 0 10px 20px -10px rgba(186,104,200,0.2); }
+        #grid-Habitación\ Principal { border-top: 3px solid #66fcf1; box-shadow: inset 0 10px 20px -10px rgba(102,252,241,0.2); }
+        #grid-Exterior { border-top: 3px solid #ba68c8; box-shadow: inset 0 10px 20px -10px rgba(186,104,200,0.2); }
+
+        .grid-items { display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; flex: 1; }
+        
+        .icono-aparato { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid; border-radius: 8px; padding: 12px; width: 140px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .icono-aparato:hover { transform: translateY(-5px); }
+        .icono-aparato strong { font-size: 14px; color: #fff; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .icono-aparato span { font-size: 11px; color: #aaa; }
+        
+        .borde-desconectable { border-left-color: #ffb74d; }
+        .borde-fijo { border-left-color: #90caf9; }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+        .dot-on { background-color: #66fcf1; box-shadow: 0 0 5px #66fcf1; }
+        .dot-off { background-color: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
+        
+        @media (max-width: 768px) { .plano-casa { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; width: 100%; margin-bottom: 30px;">E-DATA Visual MVP</h1>
-    <div class="contenedor">
-        
-        <!-- PANEL 1: CONSTRUCTOR -->
+
+    <!-- PANEL LATERAL DE CONTROLES -->
+    <div id="panel-lateral">
+        <div class="header-panel">
+            <h2>E-DATA Panel</h2>
+        </div>
+
         <div class="tarjeta">
-            <h2>1. Arma tu Casa</h2>
             <label>Habitación:</label>
             <select id="select-habitacion">
                 <option value="Cocina">Cocina</option>
@@ -42,64 +81,88 @@
             <label>Aparato (Catálogo):</label>
             <select id="select-aparato" onchange="actualizarFormulario()"></select>
 
-            <!-- OPCIONES DINÁMICAS -->
-            <div id="opciones-variables" style="padding: 15px; background-color: #1e1e2f; border-radius: 8px; margin: 15px 0;">
-                <p id="txt-info-fija" style="display: none; color: #81C784; font-size: 14px; margin: 0; padding-bottom: 10px; border-bottom: 1px solid #444;"></p>
+            <div id="opciones-variables" style="margin-top: 10px;">
+                <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 12px; margin: 0 0 10px 0;"></p>
                 
                 <div id="div-minutos">
                     <label>Minutos de uso al día:</label>
                     <input type="number" id="input-minutos" value="30" min="1" max="1440">
                 </div>
                 
-                <!-- CHECKBOX 1: EL HÁBITO DEL USUARIO -->
-                <div id="div-conexion" style="display: flex; align-items: center; margin-top: 15px;">
-                    <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer;">
-                    <label for="check-conectado" style="cursor: pointer; font-size: 15px;">¿Lo dejas enchufado el resto del día?</label>
+                <div id="div-conexion" style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <input type="checkbox" id="check-conectado" checked style="margin-right: 10px;">
+                    <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
                 </div>
 
-                <!-- CHECKBOX 2: LA DECISIÓN DE SI ES DESCONECTABLE -->
-                <div style="display: flex; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444;">
-                    <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer;">
-                    <label for="check-desconectable" style="cursor: pointer; font-size: 15px; color: #ffb74d;">¿Es desconectable?</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="check-desconectable" checked style="margin-right: 10px;">
+                    <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar?</label>
                 </div>
             </div>
-
-            <button class="btn-accion btn-agregar" onclick="agregarDispositivo()">➕ Añadir a la casa</button>
-
-            <h3 style="margin-top: 25px;">Tu Casa Actual:</h3>
-            <div id="lista-casa-actual"><p style="color:#888; font-size: 14px; text-align: center;">Tu casa está vacía.</p></div>
+            
+            <button class="btn-accion" style="margin-top: 20px;" onclick="agregarDispositivo()">➕ Añadir a la casa</button>
         </div>
 
-        <!-- PANEL 2: RESULTADOS Y IA -->
-        <div class="tarjeta">
-            <h2>2. Simulación</h2>
-            <button id="btn-simular" class="btn-accion" onclick="ejecutarSimulacion()" disabled>🚀 Calcular Gasto Matemático</button>
+        <div class="tarjeta" style="flex:1;">
+            <button id="btn-simular" class="btn-accion" onclick="ejecutarSimulacion()" disabled>🚀 Analizar Consumo</button>
 
-            <div id="panel-resultados" style="display: none; margin-top: 20px;">
-                <p>Consumo Diario: <strong id="txt-kwh">0</strong> kWh</p>
-                <p>Gasto Diario: <span id="txt-dinero" class="dinero">$0 COP</span></p>
+            <div id="panel-resultados" style="display: none; margin-top: 15px;">
+                <p style="margin: 5px 0; font-size: 14px;">Consumo: <strong id="txt-kwh">0</strong> kWh</p>
+                <p style="margin: 5px 0; font-size: 14px;">Gasto: <span id="txt-dinero" class="dinero">$0</span></p>
                 
-                <h3 style="margin-top: 20px;">Fugas Detectadas (Standby):</h3>
-                <div id="lista-vampiros"></div>
+                <div id="lista-vampiros" style="margin: 15px 0;"></div>
 
-                <hr style="border: 1px solid #444; margin: 25px 0;">
-
-                <h2>3. Asesoría de IA</h2>
                 <button id="btn-ia" class="btn-accion btn-ia" onclick="consultarIA()">✨ Consultar a Gemma 4</button>
                 <div id="mensaje-ia" class="ia-box"></div>
             </div>
         </div>
     </div>
 
+    <!-- BOTÓN FLOTANTE PARA ABRIR/CERRAR -->
+    <button id="btn-toggle" onclick="togglePanel()" title="Abrir/Cerrar panel">◀</button>
+
+    <!-- PANEL DERECHO: VISTA DE LA CASA -->
+    <div id="panel-vista">
+        <h1 class="titulo-vista">SMART HOME</h1>
+        <div class="plano-casa">
+            <div class="habitacion-grid" id="grid-Cocina">
+                <h3>Cocina</h3>
+                <div class="grid-items"></div>
+            </div>
+            <div class="habitacion-grid" id="grid-Sala">
+                <h3>Sala</h3>
+                <div class="grid-items"></div>
+            </div>
+            <div class="habitacion-grid" id="grid-Habitación Principal">
+                <h3>Habitación Principal</h3>
+                <div class="grid-items"></div>
+            </div>
+            <div class="habitacion-grid" id="grid-Exterior">
+                <h3>Exterior</h3>
+                <div class="grid-items"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // EL CATÁLOGO YA NO IMPONE SI ES DESCONECTABLE O NO, SOLO DEFINE EL USO
+        function togglePanel() {
+            const panel = document.getElementById('panel-lateral');
+            const btn = document.getElementById('btn-toggle');
+            panel.classList.toggle('minimized');
+            if (panel.classList.contains('minimized')) {
+                btn.innerText = '▶';
+            } else {
+                btn.innerText = '◀';
+            }
+        }
+
         const catalogoExcel = [
-            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable" },
-            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable" },
-            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable" },
-            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable" },
-            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo" },
-            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo" }
+            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable", desconectable: true },
+            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable", desconectable: true },
+            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable", desconectable: true },
+            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable", desconectable: true },
+            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo", desconectable: false },
+            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo", desconectable: false }
         ];
 
         let casaUsuario = {};
@@ -114,87 +177,75 @@
         };
 
         function actualizarFormulario() {
-            const indice = document.getElementById('select-aparato').value;
-            const aparato = catalogoExcel[indice];
-            
-            const divMinutos = document.getElementById('div-minutos');
-            const divConexion = document.getElementById('div-conexion');
+            const aparato = catalogoExcel[document.getElementById('select-aparato').value];
+            const divMin = document.getElementById('div-minutos');
+            const divCon = document.getElementById('div-conexion');
             const txtInfo = document.getElementById('txt-info-fija');
-            const checkDesconectable = document.getElementById('check-desconectable');
+            const chkDesc = document.getElementById('check-desconectable');
 
-            // Sugerencia visual (Si es nevera o router, sugerimos que no se desconecte, pero el usuario puede cambiarlo)
             if (aparato.tipo === "variable") {
-                divMinutos.style.display = "block";
-                divConexion.style.display = "flex";
-                txtInfo.style.display = "none";
-                checkDesconectable.checked = true; // Por defecto marcado
+                divMin.style.display = "block"; divCon.style.display = "flex"; txtInfo.style.display = "none";
+                chkDesc.checked = true;
             } else if (aparato.tipo === "ciclo") {
-                divMinutos.style.display = "none";
-                divConexion.style.display = "none";
-                txtInfo.style.display = "block";
-                txtInfo.innerText = "ℹ️ Motor cíclico: Funciona ~30% del día automáticamente.";
-                checkDesconectable.checked = false; // Por defecto desmarcado (pero editable)
-            } else if (aparato.tipo === "continuo") {
-                divMinutos.style.display = "none";
-                divConexion.style.display = "none";
-                txtInfo.style.display = "block";
-                txtInfo.innerText = "ℹ️ Equipo Continuo: Funciona 24h al día.";
-                checkDesconectable.checked = false; // Por defecto desmarcado (pero editable)
+                divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
+                txtInfo.innerHTML = "ℹ️ Motor cíclico: 30% del día automático.";
+                chkDesc.checked = false;
+            } else {
+                divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
+                txtInfo.innerHTML = "ℹ️ Equipo Continuo: 24h activo.";
+                chkDesc.checked = false;
             }
         }
 
         function agregarDispositivo() {
-            const habitacion = document.getElementById('select-habitacion').value;
+            const hab = document.getElementById('select-habitacion').value;
             const aparato = catalogoExcel[document.getElementById('select-aparato').value];
-            
-            let horasUso = 0;
-            let conectado = true;
+            let hrs = 0, conectado = true;
 
             if (aparato.tipo === "variable") {
-                horasUso = document.getElementById('input-minutos').value / 60;
+                hrs = document.getElementById('input-minutos').value / 60;
                 conectado = document.getElementById('check-conectado').checked;
             } else if (aparato.tipo === "ciclo") {
-                horasUso = 24 * 0.30; 
-                conectado = true; // Un ciclo siempre queda conectado
-            } else if (aparato.tipo === "continuo") {
-                horasUso = 24;
-                conectado = true; // Continuo siempre conectado
+                hrs = 24 * 0.30;
+                conectado = true;
+            } else {
+                hrs = 24;
+                conectado = true;
             }
 
-            // AQUI CAPTURAMOS LA DECISIÓN DEL USUARIO
-            const esDesconectableFisicamente = document.getElementById('check-desconectable').checked;
-
-            if (!casaUsuario[habitacion]) casaUsuario[habitacion] = [];
+            if (!casaUsuario[hab]) casaUsuario[hab] = [];
             
-            casaUsuario[habitacion].push({
-                nombre: aparato.nombre,
-                watts_activos: aparato.watts_activos,
-                watts_standby: aparato.watts_standby,
-                horas_uso: horasUso,
-                dejado_conectado: conectado,
-                desconectable: esDesconectableFisicamente // <-- MANDAMOS LA DECISIÓN DEL USUARIO AL BACKEND
+            casaUsuario[hab].push({
+                nombre: aparato.nombre, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
+                horas_uso: hrs, dejado_conectado: conectado, desconectable: document.getElementById('check-desconectable').checked
             });
 
-            actualizarListaVisual();
+            renderizarCasa();
             document.getElementById('btn-simular').disabled = false;
         }
 
-        function actualizarListaVisual() {
-            const cont = document.getElementById('lista-casa-actual');
-            cont.innerHTML = "";
+        function renderizarCasa() {
+            document.querySelectorAll('.grid-items').forEach(el => el.innerHTML = '');
             for (const [hab, aparatos] of Object.entries(casaUsuario)) {
-                cont.innerHTML += `<h4 style="margin: 10px 0 5px 0; color:#bbb; border-bottom: 1px solid #444; padding-bottom: 5px;">${hab}</h4>`;
-                aparatos.forEach(ap => {
-                    const hrs = ap.horas_uso.toFixed(1);
-                    const est = ap.dejado_conectado ? '🟢 Enchufado' : '🔴 Desconectado';
-                    const etiquetaDesc = ap.desconectable ? '<span style="color:#ffb74d; font-size:11px;">[Desconectable]</span>' : '<span style="color:#90caf9; font-size:11px;">[Fijo]</span>';
-                    
-                    cont.innerHTML += `
-                        <div class="item-casa">
-                            <strong>${ap.nombre}</strong> ${etiquetaDesc} <br> 
-                            <small>Uso Activo: ${hrs}h | Estado: ${est}</small>
-                        </div>`;
-                });
+                const gridId = 'grid-' + hab.replace(/\s+/g, '\\ ');
+                const areaPlano = document.querySelector(`#${gridId} .grid-items`);
+                
+                if(areaPlano) {
+                    aparatos.forEach(ap => {
+                        const hrs = ap.horas_uso.toFixed(1);
+                        const claseBorde = ap.desconectable ? 'borde-desconectable' : 'borde-fijo';
+                        const dotClass = ap.dejado_conectado ? 'dot-on' : 'dot-off';
+                        const txtEstado = ap.dejado_conectado ? 'Standby ON' : 'Apagado';
+                        
+                        areaPlano.innerHTML += `
+                            <div class="icono-aparato ${claseBorde}">
+                                <strong>${ap.nombre}</strong>
+                                <span>⚡ Activo: ${hrs}h</span>
+                                <span><i class="status-dot ${dotClass}"></i>${txtEstado}</span>
+                            </div>
+                        `;
+                    });
+                }
             }
         }
 
@@ -202,64 +253,53 @@
             document.getElementById('btn-simular').disabled = true;
             document.getElementById('mensaje-ia').style.display = "none"; 
             
-            const payload = { habitaciones: [] };
-            for (const [hab, aparatos] of Object.entries(casaUsuario)) {
-                payload.habitaciones.push({ nombre: hab, dispositivos: aparatos });
-            }
+            const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
 
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/simular', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                const res = await fetch('http://127.0.0.1:8000/api/simular', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
                 });
+                
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error("El servidor rechazó los datos. Detalles: " + errText);
+                }
+
                 const datos = await res.json();
 
                 document.getElementById('txt-kwh').innerText = datos.consumo_total_kwh;
-                document.getElementById('txt-dinero').innerText = "$" + datos.costo_simulado_cop.toLocaleString() + " COP";
+                document.getElementById('txt-dinero').innerText = "$" + datos.costo_simulado_cop.toLocaleString();
                 
-                const contenedorVampiros = document.getElementById('lista-vampiros');
-                contenedorVampiros.innerHTML = "";
-                
-                if (datos.ranking_vampiros.length === 0) {
-                    contenedorVampiros.innerHTML = "<p style='color: #81C784;'>¡Excelente! No hay fugas de energía.</p>";
-                } else {
-                    datos.ranking_vampiros.forEach(v => {
-                        contenedorVampiros.innerHTML += `
-                        <div class="vampiro-item">
-                            <strong>${v.dispositivo}</strong> (${v.habitacion})<br>
-                            <small>Fuga de Standby: ${v.watts_fantasma}W</small>
-                        </div>`;
-                    });
+                const boxVampiros = document.getElementById('lista-vampiros');
+                if (datos.ranking_vampiros.length === 0) boxVampiros.innerHTML = "<span style='color: #66fcf1; font-size:13px;'>✓ 0 Fugas detectadas</span>";
+                else {
+                    boxVampiros.innerHTML = datos.ranking_vampiros.map(v => 
+                        `<div class="vampiro-item"><strong>${v.dispositivo}</strong><br>Fuga: ${v.watts_fantasma}W</div>`
+                    ).join("");
                 }
 
                 promptGeneradoParaIA = datos.prompt_generado;
                 document.getElementById('panel-resultados').style.display = "block";
-            } catch (error) {
-                alert("Error: Asegúrate de que el servidor Python esté encendido.");
-            } finally {
-                document.getElementById('btn-simular').disabled = false;
+            } catch (error) { 
+                alert(error.message); 
+                console.error(error);
+            } finally { 
+                document.getElementById('btn-simular').disabled = false; 
             }
         }
 
         async function consultarIA() {
             const btn = document.getElementById('btn-ia');
-            btn.disabled = true;
-            btn.innerText = "Pensando (Gemma 4)...";
-
+            btn.disabled = true; btn.innerText = "Pensando (Gemma)...";
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/ia', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: promptGeneradoParaIA })
-                });
+                const res = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: promptGeneradoParaIA }) });
                 const datos = await res.json();
-
-                const cajonIA = document.getElementById('mensaje-ia');
-                cajonIA.innerText = datos.mensaje_ia;
-                cajonIA.style.display = "block";
-            } catch (error) {
-                alert("Error: Asegúrate de que LM Studio esté corriendo en el puerto 6767.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "✨ Consultar a Gemma 4";
-            }
+                const caja = document.getElementById('mensaje-ia');
+                caja.innerText = datos.mensaje_ia; caja.style.display = "block";
+            } catch (error) { alert("Error LM Studio (puerto 6767)."); } 
+            finally { btn.disabled = false; btn.innerText = "✨ Consultar a Gemma 4"; }
         }
     </script>
 </body>
