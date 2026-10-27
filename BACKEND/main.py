@@ -105,7 +105,7 @@ def simular_consumo(datos: SimulacionRequest):
 @app.post("/api/ia")
 def consultar_ia(req: IARequest):
     try:
-        cliente = OpenAI(base_url="http://localhost:6767/v1", api_key="lm-studio")
+        cliente = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
         instruccion = (
             "Eres el AI Analyst de E-DATA. Evalúa el gasto de energía y sugiere "
             "desconectar los vampiros con su respectivo ahorro mensual en COP. "
@@ -118,7 +118,7 @@ def consultar_ia(req: IARequest):
                 {"role": "user", "content": req.prompt_texto}
             ],
             temperature=0.6,
-            max_tokens=250
+            max_tokens=1500
         )
         return {"mensaje_ia": respuesta.choices[0].message.content}
     except Exception as e:
