@@ -4,47 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-DATA Visual Simulator</title>
-    
-    <!-- Fuente para el reloj digital -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
     <style>
-        body { margin: 0; height: 100vh; display: flex; font-family: 'Segoe UI', sans-serif; background-color: #0b0c10; color: #ffffff; overflow: hidden; }
+        body { margin: 0; height: 100vh; display: flex; font-family: 'Segoe UI', sans-serif; background-color: #0a0a14; color: #ffffff; overflow: hidden; }
         
-        /* PANEL IZQUIERDO */
-        #panel-lateral { width: 380px; min-width: 380px; background-color: #1f2833; padding: 20px; overflow-y: auto; border-right: 2px solid #45a29e; transition: margin-left 0.3s ease; position: relative; z-index: 30; display: flex; flex-direction: column; box-sizing: border-box; }
-        #panel-lateral.minimized { margin-left: -380px; }
-        
-        /* BOTÓN FLOTANTE INDEPENDIENTE */
-        #btn-toggle { position: fixed; left: 380px; top: 20px; background: #45a29e; color: #0b0c10; border: none; width: 40px; height: 40px; border-radius: 0 8px 8px 0; cursor: pointer; font-weight: bold; font-size: 18px; z-index: 999; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
-        #panel-lateral.minimized ~ #btn-toggle { left: 0; }
-        
-        .header-panel { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #45a29e; padding-bottom: 10px; margin-bottom: 15px; }
-        .header-panel h2 { margin: 0; color: #66fcf1; font-size: 20px; }
-
-        /* ESTILOS DE FORMULARIO */
-        .tarjeta { background-color: #0b0c10; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        label { font-size: 13px; color: #c5c6c7; }
-        select, input[type="number"] { width: 100%; padding: 10px; margin: 5px 0 15px 0; border-radius: 6px; border: 1px solid #45a29e; background-color: #1f2833; color: white; box-sizing: border-box; }
-        .btn-accion { width: 100%; background-color: #45a29e; color: #0b0c10; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
-        .btn-accion:hover:not(:disabled) { background-color: #66fcf1; box-shadow: 0 0 10px rgba(102, 252, 241, 0.5); }
-        .btn-accion:disabled { background-color: #555; color: #888; cursor: not-allowed; box-shadow: none; }
-        .btn-ia { background-color: #9C27B0; color: white; border: 1px solid #E1BEE7; margin-top: 15px; }
-        .btn-ia:hover:not(:disabled) { background-color: #ba68c8; box-shadow: 0 0 10px rgba(186, 104, 200, 0.5); }
-
-        .dinero { color: #66fcf1; font-size: 22px; font-weight: bold; }
-        .ia-box { background: rgba(156, 39, 176, 0.1); padding: 15px; margin-top: 10px; border-left: 4px solid #9C27B0; border-radius: 4px; font-style: italic; font-size: 14px; display: none; }
-        .vampiro-item { background: rgba(255, 77, 77, 0.1); padding: 8px; margin: 5px 0; border-left: 3px solid #ff4d4d; border-radius: 4px; font-size: 13px; }
-
-        /* PANEL DERECHO: CINEMÁTICA */
         #panel-vista { 
-            flex: 1; 
-            background-color: #0a0a14; 
-            position: relative; 
-            display: flex;
-            justify-content: center; 
-            align-items: center;     
-            overflow: hidden;
+            width: 100%; height: 100%; background-color: #0a0a14; 
+            position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
 
         @keyframes cicloDiaNoche {
@@ -56,28 +23,12 @@
 
         .titulo-vista { position: absolute; top: 20px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 40px; font-weight: 900; letter-spacing: 5px; margin: 0; pointer-events: none; z-index: 3; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-        /* BOTÓN HABITACIONES */
-        #btn-abrir-habitaciones { position: absolute; top: 30px; left: 30px; background: rgba(0,0,0,0.5); border: 1px solid #66fcf1; color: #66fcf1; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: bold; backdrop-filter: blur(5px); transition: 0.3s; }
-        #btn-abrir-habitaciones:hover { background: rgba(102,252,241,0.2); }
+        .contenedor-botones-flotantes { position: absolute; top: 30px; left: 30px; display: flex; flex-direction: column; gap: 15px; z-index: 10; }
+        .btn-flotante { background: rgba(0,0,0,0.5); border: 1px solid #66fcf1; color: #66fcf1; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; backdrop-filter: blur(5px); transition: 0.3s; font-size: 14px; text-align: left; }
+        .btn-flotante:hover { background: rgba(102,252,241,0.2); box-shadow: 0 0 15px rgba(102,252,241,0.4); }
 
-        /* RELOJ DIGITAL ESTILO LCD: SIN FONDO */
-        #reloj-simulacion { 
-            position: absolute; 
-            top: 30px; 
-            right: 40px; 
-            color: #ffffff; 
-            background: transparent; 
-            font-family: 'Share Tech Mono', monospace; 
-            font-size: 56px; 
-            padding: 10px;
-            border: none; 
-            z-index: 10; 
-            display: none; 
-            text-shadow: 0 4px 15px rgba(0,0,0,0.8);
-            letter-spacing: 4px;
-        }
+        #reloj-simulacion { position: absolute; top: 30px; right: 40px; color: #ffffff; background: transparent; font-family: 'Share Tech Mono', monospace; font-size: 56px; padding: 10px; border: none; z-index: 10; display: none; text-shadow: 0 4px 15px rgba(0,0,0,0.8); letter-spacing: 4px; }
         
-        /* CONTADORES */
         #contadores-tiempo-real { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10; display: none; }
         .caja-contador { background: rgba(11, 12, 16, 0.75); padding: 20px 35px; border-radius: 12px; border-bottom: 5px solid #4CAF50; backdrop-filter: blur(5px); box-shadow: 0 8px 20px rgba(0,0,0,0.5); text-align: center; min-width: 220px; }
         .caja-contador .label { color: #c5c6c7; font-size: 15px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: bold; }
@@ -85,19 +36,75 @@
 
         #imagen-casa-render { width: 100%; max-width: 1000px; max-height: 75vh; object-fit: contain; z-index: 1; }
 
-        /* PANEL DESPLEGABLE (OVERLAY DE HABITACIONES) */
-        #overlay-habitaciones {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px); z-index: 20;
-            display: flex; flex-direction: column; padding: 40px; box-sizing: border-box;
-            transition: opacity 0.3s ease, visibility 0.3s ease; overflow-y: auto;
+        /* NUEVO: BOTÓN Y CHAT DE IA FLOTANTE */
+        #btn-chat-ia {
+            position: absolute; bottom: 40px; right: 40px;
+            width: 70px; height: 70px; border-radius: 50%;
+            background: linear-gradient(135deg, #9C27B0, #45a29e);
+            border: 2px solid #66fcf1; color: white; font-size: 32px;
+            box-shadow: 0 5px 20px rgba(156, 39, 176, 0.5);
+            cursor: pointer; z-index: 50; transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; justify-content: center; align-items: center;
         }
-        #overlay-habitaciones.oculto { opacity: 0; visibility: hidden; }
+        #btn-chat-ia:hover { transform: scale(1.1); box-shadow: 0 8px 25px rgba(102, 252, 241, 0.6); }
+        
+        #badge-ia {
+            position: absolute; top: 0px; right: 2px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background-color: #ff4d4d; border: 2px solid #0a0a14;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.8);
+        }
+        .oculto { opacity: 0; visibility: hidden; pointer-events: none; }
 
+        #panel-chat-ia {
+            position: absolute; bottom: 130px; right: 40px;
+            width: 380px; max-height: 500px;
+            background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px);
+            border: 1px solid rgba(156, 39, 176, 0.5); border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 49; display: flex; flex-direction: column;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(0);
+        }
+        #panel-chat-ia.oculto { transform: translateY(20px); }
+        
+        .header-chat { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(156, 39, 176, 0.2); border-radius: 15px 15px 0 0; }
+        .header-chat h3 { margin: 0; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .btn-cerrar-chat { background: none; border: none; color: #ff4d4d; font-size: 20px; cursor: pointer; }
+        .cuerpo-chat { padding: 20px; overflow-y: auto; color: #E1BEE7; font-size: 14.5px; line-height: 1.6; }
+        
+        .vampiro-item { background: rgba(255, 77, 77, 0.15); padding: 10px; margin: 8px 0; border-left: 3px solid #ff4d4d; border-radius: 4px; font-size: 13px; color: #fff; }
+
+        /* OVERLAYS GLOBALES (Catálogo y Casa) */
+        .overlay-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px); z-index: 60; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; transition: opacity 0.3s ease, visibility 0.3s ease; overflow-y: auto; }
         .header-overlay { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; }
         .header-overlay h2 { margin: 0; color: #fff; font-weight: 300; letter-spacing: 2px; }
         .btn-cerrar-overlay { background: none; border: none; color: #ff4d4d; font-size: 24px; cursor: pointer; transition: 0.2s; }
         .btn-cerrar-overlay:hover { transform: scale(1.2); }
+
+        /* LAYOUT CATÁLOGO */
+        .layout-catalogo { display: flex; gap: 40px; height: 100%; }
+        .grid-catalogo-scroll { flex: 2; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); grid-auto-rows: max-content; gap: 20px; align-content: flex-start; align-items: start; padding-right: 15px; }
+        
+        .carta-dispositivo { background: rgba(31, 40, 51, 0.6); border: 2px solid rgba(102, 252, 241, 0.1); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; box-sizing: border-box; }
+        .carta-dispositivo:hover { background: rgba(102, 252, 241, 0.1); transform: translateY(-5px); }
+        .carta-seleccionada { border-color: #66fcf1; background: rgba(102, 252, 241, 0.15); box-shadow: 0 0 20px rgba(102,252,241,0.4); transform: translateY(-5px); }
+        
+        .checkmark-seleccion { opacity: 0; visibility: hidden; position: absolute; top: 10px; right: 10px; background-color: #0056b3; color: white; font-size: 12px; font-weight: bold; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: all 0.2s ease; }
+        .carta-seleccionada .checkmark-seleccion { opacity: 1; visibility: visible; }
+
+        .img-placeholder { width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; color: #555; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.05); }
+        .carta-dispositivo h4 { margin: 0; font-size: 15px; color: #fff; }
+        .carta-dispositivo span { font-size: 12px; color: #45a29e; font-weight: bold; }
+
+        .config-dispositivo { flex: 1; background: rgba(11, 12, 16, 0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); padding: 30px; display: flex; flex-direction: column; gap: 20px; max-height: 100%; overflow-y: auto; }
+        label { font-size: 14px; color: #c5c6c7; margin-bottom: -10px; display: block; }
+        select, input[type="number"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #45a29e; background-color: #1f2833; color: white; box-sizing: border-box; font-size: 15px; }
+        .btn-accion { width: 100%; background-color: #45a29e; color: #0b0c10; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(69, 162, 158, 0.3); }
+        .btn-accion:hover:not(:disabled) { background-color: #66fcf1; box-shadow: 0 0 15px rgba(102, 252, 241, 0.6); }
+        
+        #lista-dispositivos-agregados { flex-grow: 1; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; max-height: 200px; }
+        .item-lista-agregado { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; border-left: 3px solid #66fcf1; }
 
         .plano-casa { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
         .habitacion-grid { background: rgba(31, 40, 51, 0.6); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -122,64 +129,15 @@
 </head>
 <body>
 
-    <div id="panel-lateral">
-        <div class="header-panel">
-            <h2>E-DATA Panel</h2>
-        </div>
-
-        <div class="tarjeta">
-            <label>Habitación:</label>
-            <select id="select-habitacion">
-                <option value="Cocina">Cocina</option>
-                <option value="Sala">Sala</option>
-                <option value="Habitación Principal">Habitación Principal</option>
-                <option value="Exterior">Exterior</option>
-            </select>
-
-            <label>Aparato (Catálogo):</label>
-            <select id="select-aparato" onchange="actualizarFormulario()"></select>
-
-            <div id="opciones-variables" style="margin-top: 10px;">
-                <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 12px; margin: 0 0 10px 0;"></p>
-                <div id="div-minutos">
-                    <label>Minutos de uso al día:</label>
-                    <input type="number" id="input-minutos" value="30" min="1" max="1440">
-                </div>
-                <div id="div-conexion" style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <input type="checkbox" id="check-conectado" checked style="margin-right: 10px;">
-                    <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <input type="checkbox" id="check-desconectable" checked style="margin-right: 10px;">
-                    <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar?</label>
-                </div>
-            </div>
-            
-            <button class="btn-accion" style="margin-top: 20px;" onclick="agregarDispositivo()">➕ Añadir a la casa</button>
-        </div>
-
-        <div class="tarjeta" style="flex:1;">
-            <button id="btn-simular" class="btn-accion" onclick="ejecutarSimulacion()">🚀 Analizar Consumo</button>
-
-            <div id="panel-resultados" style="display: none; margin-top: 15px;">
-                <p style="margin: 5px 0; font-size: 14px;">Consumo: <strong id="txt-kwh">0</strong> kWh</p>
-                <p style="margin: 5px 0; font-size: 14px;">Gasto: <span id="txt-dinero" class="dinero">$0</span></p>
-                <div id="lista-vampiros" style="margin: 15px 0;"></div>
-                <button id="btn-ia" class="btn-accion btn-ia" onclick="consultarIA()">✨ Consultar a Gemma 4</button>
-                <div id="mensaje-ia" class="ia-box"></div>
-            </div>
-        </div>
-    </div>
-
-    <button id="btn-toggle" onclick="togglePanel()" title="Abrir/Cerrar panel">◀</button>
-
     <div id="panel-vista">
         <h1 class="titulo-vista">SMART HOME</h1>
         
-        <button id="btn-abrir-habitaciones" onclick="toggleOverlayHabitaciones()">Ver Dispositivos 🔍</button>
+        <div class="contenedor-botones-flotantes">
+            <button class="btn-flotante" onclick="toggleOverlay('overlay-catalogo')">➕ Agregar Dispositivo</button>
+            <button class="btn-flotante" onclick="toggleOverlay('overlay-habitaciones')">🏠 Ver Mi Casa</button>
+        </div>
         
         <div id="reloj-simulacion">00:00</div>
-
         <img id="imagen-casa-render" src="casa_edata-Photoroom.png" alt="Render Casa 3D">
 
         <div id="contadores-tiempo-real">
@@ -193,10 +151,76 @@
             </div>
         </div>
 
-        <div id="overlay-habitaciones" class="oculto">
+        <!-- Chat Flotante IA -->
+        <div id="panel-chat-ia" class="oculto">
+            <div class="header-chat">
+                <h3>🤖 Gemma 4 Analyst</h3>
+                <button class="btn-cerrar-chat" onclick="cerrarChatIA()">✖</button>
+            </div>
+            <div class="cuerpo-chat">
+                <p id="mensaje-ia-texto">Esperando ejecución de simulación...</p>
+                <div id="resumen-fugas"></div>
+            </div>
+        </div>
+
+        <!-- Botón de Simulación Global Flotante -->
+        <button id="btn-chat-ia" onclick="manejarClickBotonFlotante()">
+            <span id="icono-btn-ia">🤖</span>
+            <div id="badge-ia" class="oculto"></div>
+        </button>
+
+        <!-- OVERLAY CATÁLOGO -->
+        <div id="overlay-catalogo" class="overlay-panel oculto">
+            <div class="header-overlay">
+                <h2>Catálogo de Dispositivos</h2>
+                <button class="btn-cerrar-overlay" onclick="toggleOverlay('overlay-catalogo')">✖</button>
+            </div>
+            <div class="layout-catalogo">
+                <div class="grid-catalogo-scroll" id="grid-catalogo"></div>
+                <div class="config-dispositivo">
+                    <h3 id="txt-nombre-seleccion" style="color: #66fcf1; margin-top:0; border-bottom:1px solid #333; padding-bottom:15px;">Selecciona un dispositivo</h3>
+                    
+                    <label>Habitación de destino:</label>
+                    <select id="select-habitacion">
+                        <option value="Cocina">Cocina</option>
+                        <option value="Sala">Sala</option>
+                        <option value="Habitación Principal">Habitación Principal</option>
+                        <option value="Exterior">Exterior</option>
+                    </select>
+
+                    <div id="opciones-variables">
+                        <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 13px; margin: 0; background: rgba(69, 162, 158, 0.1); padding: 10px; border-radius: 8px;"></p>
+                        
+                        <div id="div-minutos" style="margin-top: 20px;">
+                            <label>Minutos de uso al día:</label>
+                            <input type="number" id="input-minutos" value="30" min="1" max="1440" style="margin-top: 15px;">
+                        </div>
+                        
+                        <div id="div-conexion" style="display: flex; align-items: center; margin-top: 20px;">
+                            <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
+                            <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
+                        </div>
+
+                        <div style="display: flex; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
+                            <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
+                            <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar (Físicamente)?</label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-accion" style="margin-top: 20px;" onclick="agregarDispositivo()">➕ Instalar en la casa</button>
+
+                    <div id="lista-dispositivos-agregados">
+                        <span style="color:#aaa; font-size:12px; font-style:italic;">Aún no has agregado dispositivos.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY HABITACIONES -->
+        <div id="overlay-habitaciones" class="overlay-panel oculto">
             <div class="header-overlay">
                 <h2>Dispositivos por Habitación</h2>
-                <button class="btn-cerrar-overlay" onclick="toggleOverlayHabitaciones()">✖</button>
+                <button class="btn-cerrar-overlay" onclick="toggleOverlay('overlay-habitaciones')">✖</button>
             </div>
             <div class="plano-casa">
                 <div class="habitacion-grid" id="grid-Cocina"><h3>Cocina</h3><div class="grid-items"></div></div>
@@ -208,42 +232,48 @@
     </div>
 
     <script>
-        function togglePanel() {
-            const panel = document.getElementById('panel-lateral');
-            const btn = document.getElementById('btn-toggle');
-            panel.classList.toggle('minimized');
-            btn.innerText = panel.classList.contains('minimized') ? '▶' : '◀';
-        }
-
-        function toggleOverlayHabitaciones() {
-            const overlay = document.getElementById('overlay-habitaciones');
-            overlay.classList.toggle('oculto');
-        }
+        function toggleOverlay(id) { document.getElementById(id).classList.toggle('oculto'); }
 
         const catalogoExcel = [
-            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable", desconectable: true },
-            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable", desconectable: true },
-            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable", desconectable: true },
-            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable", desconectable: true },
-            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo", desconectable: false },
-            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo", desconectable: false }
+            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable", desconectable: true, icono: "🍳" },
+            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable", desconectable: true, icono: "♨️" },
+            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable", desconectable: true, icono: "📺" },
+            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable", desconectable: true, icono: "🥪" },
+            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo", desconectable: false, icono: "❄️" },
+            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo", desconectable: false, icono: "🌐" }
         ];
 
         let casaUsuario = {};
-        let promptGeneradoParaIA = ""; 
-        let maxKwhGlobal = 0;
-        let maxCopGlobal = 0;
+        let indexSeleccionado = 0;
+        let estadoBotonFlotante = 'IDLE'; // IDLE, CALCULANDO, LISTO
 
-        window.onload = () => {
-            const select = document.getElementById('select-aparato');
+        window.onload = () => { renderizarCatalogoGrid(); };
+
+        function renderizarCatalogoGrid() {
+            const grid = document.getElementById('grid-catalogo');
+            grid.innerHTML = '';
             catalogoExcel.forEach((item, index) => {
-                select.innerHTML += `<option value="${index}">${item.nombre} (~${item.watts_activos}W)</option>`;
+                const claseSeleccion = index === indexSeleccionado ? 'carta-seleccionada' : '';
+                grid.innerHTML += `
+                    <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${index})">
+                        <div class="checkmark-seleccion">✔</div>
+                        <div class="img-placeholder">${item.icono}</div>
+                        <h4>${item.nombre}</h4>
+                        <span>⚡ ~${item.watts_activos}W</span>
+                    </div>
+                `;
             });
-            actualizarFormulario();
-        };
+            actualizarFormularioUI();
+        }
 
-        function actualizarFormulario() {
-            const aparato = catalogoExcel[document.getElementById('select-aparato').value];
+        function seleccionarDispositivo(index) {
+            indexSeleccionado = index;
+            renderizarCatalogoGrid();
+        }
+
+        function actualizarFormularioUI() {
+            const aparato = catalogoExcel[indexSeleccionado];
+            document.getElementById('txt-nombre-seleccion').innerText = `Configurando: ${aparato.nombre}`;
             const divMin = document.getElementById('div-minutos');
             const divCon = document.getElementById('div-conexion');
             const txtInfo = document.getElementById('txt-info-fija');
@@ -254,44 +284,51 @@
                 chkDesc.checked = true;
             } else if (aparato.tipo === "ciclo") {
                 divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-                txtInfo.innerHTML = "ℹ️ Motor cíclico: 30% del día automático.";
+                txtInfo.innerHTML = "ℹ️ Motor cíclico: Funciona ~30% del día en modo automático.";
                 chkDesc.checked = false;
             } else {
                 divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-                txtInfo.innerHTML = "ℹ️ Equipo Continuo: 24h activo.";
+                txtInfo.innerHTML = "ℹ️ Equipo Continuo: Requiere conexión 24h activa.";
                 chkDesc.checked = false;
             }
         }
 
         function agregarDispositivo() {
             const hab = document.getElementById('select-habitacion').value;
-            const aparato = catalogoExcel[document.getElementById('select-aparato').value];
+            const aparato = catalogoExcel[indexSeleccionado];
             let hrs = 0, conectado = true;
 
             if (aparato.tipo === "variable") {
                 hrs = document.getElementById('input-minutos').value / 60;
                 conectado = document.getElementById('check-conectado').checked;
             } else if (aparato.tipo === "ciclo") {
-                hrs = 24 * 0.30;
-                conectado = true;
-            } else {
-                hrs = 24;
-                conectado = true;
-            }
+                hrs = 24 * 0.30; conectado = true;
+            } else { hrs = 24; conectado = true; }
 
             if (!casaUsuario[hab]) casaUsuario[hab] = [];
-            
             casaUsuario[hab].push({
                 nombre: aparato.nombre, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
                 horas_uso: hrs, dejado_conectado: conectado, desconectable: document.getElementById('check-desconectable').checked
             });
 
             renderizarCasa();
-            
-            const overlay = document.getElementById('overlay-habitaciones');
-            if(overlay.classList.contains('oculto')){
-                toggleOverlayHabitaciones();
+            renderizarListaAgregadosEnCatalogo();
+            estadoBotonFlotante = 'IDLE'; // Si agrega nuevo aparato, obliga a simular de nuevo
+            document.getElementById('icono-btn-ia').innerText = '🤖';
+            document.getElementById('badge-ia').classList.add('oculto');
+        }
+
+        function renderizarListaAgregadosEnCatalogo() {
+            const lista = document.getElementById('lista-dispositivos-agregados');
+            lista.innerHTML = '';
+            let contadorTotal = 0;
+            for (const [hab, aparatos] of Object.entries(casaUsuario)) {
+                aparatos.forEach(ap => {
+                    contadorTotal++;
+                    lista.innerHTML += `<div class="item-lista-agregado"><span><strong>${ap.nombre}</strong></span><span style="color:#aaa;">📍 ${hab}</span></div>`;
+                });
             }
+            if(contadorTotal === 0) lista.innerHTML = `<span style="color:#aaa; font-size:12px; font-style:italic;">Aún no has agregado dispositivos.</span>`;
         }
 
         function renderizarCasa() {
@@ -299,110 +336,117 @@
             for (const [hab, aparatos] of Object.entries(casaUsuario)) {
                 const gridId = 'grid-' + hab.replace(/\s+/g, '\\ ');
                 const areaPlano = document.querySelector(`#${gridId} .grid-items`);
-                
                 if(areaPlano) {
                     aparatos.forEach(ap => {
-                        const hrs = ap.horas_uso.toFixed(1);
                         const claseBorde = ap.desconectable ? 'borde-desconectable' : 'borde-fijo';
                         const dotClass = ap.dejado_conectado ? 'dot-on' : 'dot-off';
                         const txtEstado = ap.dejado_conectado ? 'Standby ON' : 'Apagado';
-                        
                         areaPlano.innerHTML += `
                             <div class="icono-aparato ${claseBorde}">
                                 <strong>${ap.nombre}</strong>
-                                <span>⚡ Activo: ${hrs}h</span>
+                                <span>⚡ Activo: ${ap.horas_uso.toFixed(1)}h</span>
                                 <span><i class="status-dot ${dotClass}"></i>${txtEstado}</span>
-                            </div>
-                        `;
+                            </div>`;
                     });
                 }
             }
         }
 
-        async function ejecutarSimulacion() {
-            const btn = document.getElementById('btn-simular');
-            btn.disabled = true;
-            document.getElementById('mensaje-ia').style.display = "none"; 
+        /* LÓGICA DEL BOTÓN FLOTANTE UNIFICADO */
+        async function manejarClickBotonFlotante() {
+            if (Object.keys(casaUsuario).length === 0) {
+                alert("Para simular, primero debes agregar al menos un dispositivo a la casa.");
+                return;
+            }
+
+            if (estadoBotonFlotante === 'IDLE') {
+                await ejecutarMotorTotal();
+            } else if (estadoBotonFlotante === 'LISTO') {
+                abrirChatIA();
+            }
+        }
+
+        function abrirChatIA() {
+            document.getElementById('panel-chat-ia').classList.remove('oculto');
+            document.getElementById('badge-ia').classList.add('oculto'); // Se oculta notificación al leer
+        }
+
+        function cerrarChatIA() {
+            document.getElementById('panel-chat-ia').classList.add('oculto');
+        }
+
+        async function ejecutarMotorTotal() {
+            estadoBotonFlotante = 'CALCULANDO';
+            document.getElementById('icono-btn-ia').innerText = '⏳';
+            document.getElementById('badge-ia').classList.add('oculto');
+            document.getElementById('panel-chat-ia').classList.add('oculto'); // Ocultar si estaba abierto
 
             const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
 
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/simular', { 
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
-                });
-                if (!res.ok) throw new Error("El servidor rechazó los datos.");
-
-                const datos = await res.json();
+                // 1. Matemáticas
+                const resMath = await fetch('http://127.0.0.1:8000/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!resMath.ok) throw new Error("Error en servidor.");
+                const datos = await resMath.json();
                 
-                maxKwhGlobal = datos.consumo_total_kwh;
-                maxCopGlobal = datos.costo_simulado_cop;
-
-                document.getElementById('txt-kwh').innerText = maxKwhGlobal;
-                document.getElementById('txt-dinero').innerText = "$" + maxCopGlobal.toLocaleString();
-                
-                const boxVampiros = document.getElementById('lista-vampiros');
-                if (datos.ranking_vampiros.length === 0) boxVampiros.innerHTML = "<span style='color: #66fcf1; font-size:13px;'>✓ 0 Fugas detectadas</span>";
-                else {
-                    boxVampiros.innerHTML = datos.ranking_vampiros.map(v => 
-                        `<div class="vampiro-item"><strong>${v.dispositivo}</strong><br>Fuga: ${v.watts_fantasma}W</div>`
-                    ).join("");
+                // Preparar resumen de vampiros para el chat
+                let htmlVampiros = "";
+                if (datos.ranking_vampiros.length > 0) {
+                    htmlVampiros = `<hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;"><h4 style="color:#ff4d4d; margin:0 0 10px 0;">Fugas en Reposo Detectadas:</h4>`;
+                    datos.ranking_vampiros.forEach(v => {
+                        htmlVampiros += `<div class="vampiro-item"><strong>${v.dispositivo}</strong> - ${v.watts_fantasma}W desperdiciados</div>`;
+                    });
                 }
+                document.getElementById('resumen-fugas').innerHTML = htmlVampiros;
 
-                promptGeneradoParaIA = datos.prompt_generado;
-                document.getElementById('panel-resultados').style.display = "block";
+                // 2. Transición y Contadores
+                document.getElementById('panel-vista').style.animation = "none";
+                void document.getElementById('panel-vista').offsetWidth; 
+                document.getElementById('panel-vista').style.animation = "cicloDiaNoche 60s ease-in-out forwards";
+                animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop);
+
+                // 3. IA (Gemma 4)
+                document.getElementById('mensaje-ia-texto').innerText = "Gemma 4 está analizando tus datos...";
                 
+                const resIA = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: datos.prompt_generado }) });
+                const datosIA = await resIA.json();
+                
+                document.getElementById('mensaje-ia-texto').innerText = datosIA.mensaje_ia;
+                
+                // Estado final
+                estadoBotonFlotante = 'LISTO';
+                document.getElementById('icono-btn-ia').innerText = '🤖';
+                document.getElementById('badge-ia').classList.remove('oculto'); // Muestra punto rojo
+
             } catch (error) { 
-                alert(error.message); 
-            } finally { 
-                btn.disabled = false; 
+                alert(error.message);
+                estadoBotonFlotante = 'IDLE';
+                document.getElementById('icono-btn-ia').innerText = '🤖';
             }
         }
 
         function animarContadoresTiempoReal(kwhFinal, copFinal) {
             const reloj = document.getElementById('reloj-simulacion');
             const contadores = document.getElementById('contadores-tiempo-real');
+            reloj.style.display = 'block'; contadores.style.display = 'flex';
+            
             const txtKwh = document.getElementById('live-kwh');
             const txtCop = document.getElementById('live-cop');
             
-            reloj.style.display = 'block';
-            contadores.style.display = 'flex';
+            const duracion = 60000; const inicio = performance.now();
 
-            const duracionAnimacion = 60000;
-            const tiempoInicio = performance.now();
-
-            function actualizarValores(tiempoActual) {
-                let progreso = (tiempoActual - tiempoInicio) / duracionAnimacion;
+            function actualizar(tiempo) {
+                let progreso = (tiempo - inicio) / duracion;
                 if (progreso > 1) progreso = 1;
 
-                let minutosSimulados = Math.floor(progreso * 1440);
-                let horas = Math.floor(minutosSimulados / 60).toString().padStart(2, '0');
-                let minutos = (minutosSimulados % 60).toString().padStart(2, '0');
-                
-                reloj.innerText = `${horas}:${minutos}`;
+                let minSim = Math.floor(progreso * 1440);
+                reloj.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
                 txtKwh.innerText = `${(progreso * kwhFinal).toFixed(2)} kWh`;
                 txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
 
-                if (progreso < 1) {
-                    requestAnimationFrame(actualizarValores);
-                }
+                if (progreso < 1) requestAnimationFrame(actualizar);
             }
-            requestAnimationFrame(actualizarValores);
-        }
-
-        async function consultarIA() {
-            const btn = document.getElementById('btn-ia');
-            btn.disabled = true; btn.innerText = "Pensando (Gemma)...";
-            
-            document.getElementById('panel-vista').style.animation = "cicloDiaNoche 60s ease-in-out forwards";
-            animarContadoresTiempoReal(maxKwhGlobal, maxCopGlobal);
-
-            try {
-                const res = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: promptGeneradoParaIA }) });
-                const datos = await res.json();
-                const caja = document.getElementById('mensaje-ia');
-                caja.innerText = datos.mensaje_ia; caja.style.display = "block";
-            } catch (error) { alert("Error LM Studio (puerto 6767)."); } 
-            finally { btn.disabled = false; btn.innerText = "✨ Consultar a Gemma 4"; }
+            requestAnimationFrame(actualizar);
         }
     </script>
 </body>
