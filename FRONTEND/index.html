@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-DATA Visual Simulator</title>
+    
+    <!-- Fuente para el reloj digital -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
     <style>
         body { margin: 0; height: 100vh; display: flex; font-family: 'Segoe UI', sans-serif; background-color: #0b0c10; color: #ffffff; overflow: hidden; }
         
@@ -35,7 +39,7 @@
         /* PANEL DERECHO: CINEMÁTICA */
         #panel-vista { 
             flex: 1; 
-            background-color: #0a0a14; /* Inicia oscuro por defecto */
+            background-color: #0a0a14; 
             position: relative; 
             display: flex;
             justify-content: center; 
@@ -44,37 +48,49 @@
         }
 
         @keyframes cicloDiaNoche {
-            0%   { background-color: #0a0a14; } /* Noche / Madrugada */
-            40%  { background-color: #87CEEB; } /* Día claro */
-            60%  { background-color: #87CEEB; } /* Día claro */
-            100% { background-color: #0a0a14; } /* Noche */
+            0%   { background-color: #0a0a14; }
+            40%  { background-color: #87CEEB; } 
+            60%  { background-color: #87CEEB; } 
+            100% { background-color: #0a0a14; } 
         }
 
-        /* Título Principal */
-        .titulo-vista { position: absolute; top: 20px; left: 0; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 40px; font-weight: 900; letter-spacing: 5px; margin: 0; pointer-events: none; z-index: 3; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .titulo-vista { position: absolute; top: 20px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 40px; font-weight: 900; letter-spacing: 5px; margin: 0; pointer-events: none; z-index: 3; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
-        /* Botón para abrir el panel de dispositivos */
-        #btn-abrir-habitaciones { position: absolute; top: 30px; right: 30px; background: rgba(0,0,0,0.5); border: 1px solid #66fcf1; color: #66fcf1; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: bold; backdrop-filter: blur(5px); transition: 0.3s; }
+        /* BOTÓN HABITACIONES */
+        #btn-abrir-habitaciones { position: absolute; top: 30px; left: 30px; background: rgba(0,0,0,0.5); border: 1px solid #66fcf1; color: #66fcf1; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 10; font-weight: bold; backdrop-filter: blur(5px); transition: 0.3s; }
         #btn-abrir-habitaciones:hover { background: rgba(102,252,241,0.2); }
 
-        /* Render de la Casa */
-        #imagen-casa-render {
-            width: 100%;
-            max-width: 1000px;
-            max-height: 85vh; 
-            object-fit: contain; 
-            z-index: 1;
+        /* RELOJ DIGITAL ESTILO LCD: SIN FONDO */
+        #reloj-simulacion { 
+            position: absolute; 
+            top: 30px; 
+            right: 40px; 
+            color: #ffffff; 
+            background: transparent; 
+            font-family: 'Share Tech Mono', monospace; 
+            font-size: 56px; 
+            padding: 10px;
+            border: none; 
+            z-index: 10; 
+            display: none; 
+            text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            letter-spacing: 4px;
         }
+        
+        /* CONTADORES */
+        #contadores-tiempo-real { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10; display: none; }
+        .caja-contador { background: rgba(11, 12, 16, 0.75); padding: 20px 35px; border-radius: 12px; border-bottom: 5px solid #4CAF50; backdrop-filter: blur(5px); box-shadow: 0 8px 20px rgba(0,0,0,0.5); text-align: center; min-width: 220px; }
+        .caja-contador .label { color: #c5c6c7; font-size: 15px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; font-weight: bold; }
+        .caja-contador .valor { color: #4CAF50; font-size: 34px; font-weight: bold; text-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
+
+        #imagen-casa-render { width: 100%; max-width: 1000px; max-height: 75vh; object-fit: contain; z-index: 1; }
 
         /* PANEL DESPLEGABLE (OVERLAY DE HABITACIONES) */
         #overlay-habitaciones {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 12, 16, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 20;
+            background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px); z-index: 20;
             display: flex; flex-direction: column; padding: 40px; box-sizing: border-box;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            overflow-y: auto;
+            transition: opacity 0.3s ease, visibility 0.3s ease; overflow-y: auto;
         }
         #overlay-habitaciones.oculto { opacity: 0; visibility: hidden; }
 
@@ -84,7 +100,6 @@
         .btn-cerrar-overlay:hover { transform: scale(1.2); }
 
         .plano-casa { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
-        
         .habitacion-grid { background: rgba(31, 40, 51, 0.6); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .habitacion-grid h3 { margin: 0 0 15px 0; color: #c5c6c7; font-weight: normal; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
         
@@ -94,24 +109,19 @@
         #grid-Exterior { border-top: 3px solid #ba68c8; }
 
         .grid-items { display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; flex: 1; }
-        
         .icono-aparato { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid; border-radius: 8px; padding: 12px; width: 140px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
         .icono-aparato:hover { transform: translateY(-5px); }
         .icono-aparato strong { font-size: 14px; color: #fff; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .icono-aparato span { font-size: 11px; color: #aaa; }
-        
         .borde-desconectable { border-left-color: #ffb74d; }
         .borde-fijo { border-left-color: #90caf9; }
         .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
         .dot-on { background-color: #66fcf1; box-shadow: 0 0 5px #66fcf1; }
         .dot-off { background-color: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
-        
-        @media (max-width: 768px) { .plano-casa { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <!-- PANEL LATERAL DE CONTROLES -->
     <div id="panel-lateral">
         <div class="header-panel">
             <h2>E-DATA Panel</h2>
@@ -131,17 +141,14 @@
 
             <div id="opciones-variables" style="margin-top: 10px;">
                 <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 12px; margin: 0 0 10px 0;"></p>
-                
                 <div id="div-minutos">
                     <label>Minutos de uso al día:</label>
                     <input type="number" id="input-minutos" value="30" min="1" max="1440">
                 </div>
-                
                 <div id="div-conexion" style="display: flex; align-items: center; margin-bottom: 10px;">
                     <input type="checkbox" id="check-conectado" checked style="margin-right: 10px;">
                     <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
                 </div>
-
                 <div style="display: flex; align-items: center;">
                     <input type="checkbox" id="check-desconectable" checked style="margin-right: 10px;">
                     <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar?</label>
@@ -157,48 +164,45 @@
             <div id="panel-resultados" style="display: none; margin-top: 15px;">
                 <p style="margin: 5px 0; font-size: 14px;">Consumo: <strong id="txt-kwh">0</strong> kWh</p>
                 <p style="margin: 5px 0; font-size: 14px;">Gasto: <span id="txt-dinero" class="dinero">$0</span></p>
-                
                 <div id="lista-vampiros" style="margin: 15px 0;"></div>
-
                 <button id="btn-ia" class="btn-accion btn-ia" onclick="consultarIA()">✨ Consultar a Gemma 4</button>
                 <div id="mensaje-ia" class="ia-box"></div>
             </div>
         </div>
     </div>
 
-    <!-- BOTÓN FLOTANTE PARA ABRIR/CERRAR -->
     <button id="btn-toggle" onclick="togglePanel()" title="Abrir/Cerrar panel">◀</button>
 
-    <!-- PANEL DERECHO: VISTA DE LA CASA -->
     <div id="panel-vista">
         <h1 class="titulo-vista">SMART HOME</h1>
+        
         <button id="btn-abrir-habitaciones" onclick="toggleOverlayHabitaciones()">Ver Dispositivos 🔍</button>
+        
+        <div id="reloj-simulacion">00:00</div>
 
         <img id="imagen-casa-render" src="casa_edata-Photoroom.png" alt="Render Casa 3D">
 
-        <!-- PANEL DESPLEGABLE DE HABITACIONES -->
+        <div id="contadores-tiempo-real">
+            <div class="caja-contador">
+                <div class="label">Energía Acumulada</div>
+                <div id="live-kwh" class="valor">0.00 kWh</div>
+            </div>
+            <div class="caja-contador">
+                <div class="label">Costo Proyectado</div>
+                <div id="live-cop" class="valor">$0</div>
+            </div>
+        </div>
+
         <div id="overlay-habitaciones" class="oculto">
             <div class="header-overlay">
                 <h2>Dispositivos por Habitación</h2>
                 <button class="btn-cerrar-overlay" onclick="toggleOverlayHabitaciones()">✖</button>
             </div>
             <div class="plano-casa">
-                <div class="habitacion-grid" id="grid-Cocina">
-                    <h3>Cocina</h3>
-                    <div class="grid-items"></div>
-                </div>
-                <div class="habitacion-grid" id="grid-Sala">
-                    <h3>Sala</h3>
-                    <div class="grid-items"></div>
-                </div>
-                <div class="habitacion-grid" id="grid-Habitación Principal">
-                    <h3>Habitación Principal</h3>
-                    <div class="grid-items"></div>
-                </div>
-                <div class="habitacion-grid" id="grid-Exterior">
-                    <h3>Exterior</h3>
-                    <div class="grid-items"></div>
-                </div>
+                <div class="habitacion-grid" id="grid-Cocina"><h3>Cocina</h3><div class="grid-items"></div></div>
+                <div class="habitacion-grid" id="grid-Sala"><h3>Sala</h3><div class="grid-items"></div></div>
+                <div class="habitacion-grid" id="grid-Habitación Principal"><h3>Habitación Principal</h3><div class="grid-items"></div></div>
+                <div class="habitacion-grid" id="grid-Exterior"><h3>Exterior</h3><div class="grid-items"></div></div>
             </div>
         </div>
     </div>
@@ -227,6 +231,8 @@
 
         let casaUsuario = {};
         let promptGeneradoParaIA = ""; 
+        let maxKwhGlobal = 0;
+        let maxCopGlobal = 0;
 
         window.onload = () => {
             const select = document.getElementById('select-aparato');
@@ -322,19 +328,17 @@
 
             try {
                 const res = await fetch('http://127.0.0.1:8000/api/simular', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
                 });
-                
-                if (!res.ok) {
-                    throw new Error("El servidor rechazó los datos.");
-                }
+                if (!res.ok) throw new Error("El servidor rechazó los datos.");
 
                 const datos = await res.json();
+                
+                maxKwhGlobal = datos.consumo_total_kwh;
+                maxCopGlobal = datos.costo_simulado_cop;
 
-                document.getElementById('txt-kwh').innerText = datos.consumo_total_kwh;
-                document.getElementById('txt-dinero').innerText = "$" + datos.costo_simulado_cop.toLocaleString();
+                document.getElementById('txt-kwh').innerText = maxKwhGlobal;
+                document.getElementById('txt-dinero').innerText = "$" + maxCopGlobal.toLocaleString();
                 
                 const boxVampiros = document.getElementById('lista-vampiros');
                 if (datos.ranking_vampiros.length === 0) boxVampiros.innerHTML = "<span style='color: #66fcf1; font-size:13px;'>✓ 0 Fugas detectadas</span>";
@@ -349,18 +353,48 @@
                 
             } catch (error) { 
                 alert(error.message); 
-                console.error(error);
             } finally { 
                 btn.disabled = false; 
             }
+        }
+
+        function animarContadoresTiempoReal(kwhFinal, copFinal) {
+            const reloj = document.getElementById('reloj-simulacion');
+            const contadores = document.getElementById('contadores-tiempo-real');
+            const txtKwh = document.getElementById('live-kwh');
+            const txtCop = document.getElementById('live-cop');
+            
+            reloj.style.display = 'block';
+            contadores.style.display = 'flex';
+
+            const duracionAnimacion = 60000;
+            const tiempoInicio = performance.now();
+
+            function actualizarValores(tiempoActual) {
+                let progreso = (tiempoActual - tiempoInicio) / duracionAnimacion;
+                if (progreso > 1) progreso = 1;
+
+                let minutosSimulados = Math.floor(progreso * 1440);
+                let horas = Math.floor(minutosSimulados / 60).toString().padStart(2, '0');
+                let minutos = (minutosSimulados % 60).toString().padStart(2, '0');
+                
+                reloj.innerText = `${horas}:${minutos}`;
+                txtKwh.innerText = `${(progreso * kwhFinal).toFixed(2)} kWh`;
+                txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
+
+                if (progreso < 1) {
+                    requestAnimationFrame(actualizarValores);
+                }
+            }
+            requestAnimationFrame(actualizarValores);
         }
 
         async function consultarIA() {
             const btn = document.getElementById('btn-ia');
             btn.disabled = true; btn.innerText = "Pensando (Gemma)...";
             
-            // Iniciar ciclo de día (Oscuro -> Claro -> Oscuro)
             document.getElementById('panel-vista').style.animation = "cicloDiaNoche 60s ease-in-out forwards";
+            animarContadoresTiempoReal(maxKwhGlobal, maxCopGlobal);
 
             try {
                 const res = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: promptGeneradoParaIA }) });
