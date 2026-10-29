@@ -9,10 +9,7 @@
     <style>
         body { margin: 0; height: 100vh; display: flex; font-family: 'Segoe UI', sans-serif; background-color: #0a0a14; color: #ffffff; overflow: hidden; }
         
-        #panel-vista { 
-            width: 100%; height: 100%; background-color: #0a0a14; 
-            position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
+        #panel-vista { width: 100%; height: 100%; background-color: #0a0a14; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
 
         @keyframes cicloDiaNoche {
             0%   { background-color: #0a0a14; }
@@ -36,92 +33,108 @@
 
         #imagen-casa-render { width: 100%; max-width: 1000px; max-height: 75vh; object-fit: contain; z-index: 1; }
 
-        /* NUEVO: BOTÓN Y CHAT DE IA FLOTANTE */
+        /* BOTÓN Y CHAT DE IA FLOTANTE */
         #btn-chat-ia {
-            position: absolute; bottom: 40px; right: 40px;
-            width: 70px; height: 70px; border-radius: 50%;
-            background: linear-gradient(135deg, #9C27B0, #45a29e);
-            border: 2px solid #66fcf1; color: white; font-size: 32px;
-            box-shadow: 0 5px 20px rgba(156, 39, 176, 0.5);
-            cursor: pointer; z-index: 50; transition: transform 0.2s, box-shadow 0.2s;
+            position: absolute; bottom: 40px; right: 40px; width: 70px; height: 70px; border-radius: 50%;
+            background: linear-gradient(135deg, #9C27B0, #45a29e); border: 2px solid #66fcf1; color: white; font-size: 32px;
+            box-shadow: 0 5px 20px rgba(156, 39, 176, 0.5); cursor: pointer; z-index: 50; transition: transform 0.2s, box-shadow 0.2s;
             display: flex; justify-content: center; align-items: center;
         }
         #btn-chat-ia:hover { transform: scale(1.1); box-shadow: 0 8px 25px rgba(102, 252, 241, 0.6); }
+        #badge-ia { position: absolute; top: 0px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background-color: #ff4d4d; border: 2px solid #0a0a14; box-shadow: 0 0 10px rgba(255, 77, 77, 0.8); }
         
-        #badge-ia {
-            position: absolute; top: 0px; right: 2px;
-            width: 18px; height: 18px; border-radius: 50%;
-            background-color: #ff4d4d; border: 2px solid #0a0a14;
-            box-shadow: 0 0 10px rgba(255, 77, 77, 0.8);
-        }
         .oculto { opacity: 0; visibility: hidden; pointer-events: none; }
 
         #panel-chat-ia {
-            position: absolute; bottom: 130px; right: 40px;
-            width: 380px; max-height: 500px;
+            position: absolute; bottom: 130px; right: 40px; width: 380px; max-height: 500px;
             background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px);
-            border: 1px solid rgba(156, 39, 176, 0.5); border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            z-index: 49; display: flex; flex-direction: column;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform: translateY(0);
+            border: 1px solid rgba(156, 39, 176, 0.5); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 49; display: flex; flex-direction: column; transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(0);
         }
         #panel-chat-ia.oculto { transform: translateY(20px); }
-        
         .header-chat { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(156, 39, 176, 0.2); border-radius: 15px 15px 0 0; }
         .header-chat h3 { margin: 0; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
-        .btn-cerrar-chat { background: none; border: none; color: #ff4d4d; font-size: 20px; cursor: pointer; }
+        .btn-cerrar { background: none; border: none; color: #ff4d4d; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-cerrar:hover { transform: scale(1.2); }
         .cuerpo-chat { padding: 20px; overflow-y: auto; color: #E1BEE7; font-size: 14.5px; line-height: 1.6; }
-        
         .vampiro-item { background: rgba(255, 77, 77, 0.15); padding: 10px; margin: 8px 0; border-left: 3px solid #ff4d4d; border-radius: 4px; font-size: 13px; color: #fff; }
 
-        /* OVERLAYS GLOBALES (Catálogo y Casa) */
-        .overlay-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(10px); z-index: 60; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; transition: opacity 0.3s ease, visibility 0.3s ease; overflow-y: auto; }
-        .header-overlay { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; }
+        /* OVERLAYS GLOBALES */
+        .overlay-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.9); backdrop-filter: blur(10px); z-index: 60; display: flex; flex-direction: column; padding: 40px; box-sizing: border-box; transition: opacity 0.3s ease, visibility 0.3s ease; overflow-y: auto; }
+        .header-overlay { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; }
         .header-overlay h2 { margin: 0; color: #fff; font-weight: 300; letter-spacing: 2px; }
-        .btn-cerrar-overlay { background: none; border: none; color: #ff4d4d; font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .btn-cerrar-overlay:hover { transform: scale(1.2); }
+
+        /* FORMULARIOS Y BOTONES */
+        input[type="text"], input[type="number"], select { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid #45a29e; background-color: rgba(31, 40, 51, 0.8); color: white; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus, select:focus { box-shadow: 0 0 10px rgba(102,252,241,0.3); }
+        .btn-accion { width: 100%; background-color: #45a29e; color: #0b0c10; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(69, 162, 158, 0.3); }
+        .btn-accion:hover { background-color: #66fcf1; box-shadow: 0 0 15px rgba(102, 252, 241, 0.6); }
+
+        /* DISEÑO DE LISTAS Y ELIMINAR */
+        .lista-elegante { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .item-lista { background: rgba(255, 255, 255, 0.05); padding: 12px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #66fcf1; font-size: 14px; }
+        .btn-eliminar-small { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 16px; padding: 5px; border-radius: 5px; transition: 0.2s; }
+        .btn-eliminar-small:hover { background: rgba(255,77,77,0.2); transform: scale(1.1); }
 
         /* LAYOUT CATÁLOGO */
-        .layout-catalogo { display: flex; gap: 40px; height: 100%; }
-        .grid-catalogo-scroll { flex: 2; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); grid-auto-rows: max-content; gap: 20px; align-content: flex-start; align-items: start; padding-right: 15px; }
+        .layout-catalogo { display: flex; gap: 40px; height: 100%; flex-direction: column; }
+        .filtros-container { width: 100%; display: flex; gap: 15px; margin-bottom: 10px; }
+        .filtros-container input { flex: 2; border-radius: 30px; padding: 15px 20px; }
+        .filtros-container select { flex: 1; border-radius: 30px; padding: 15px 20px; cursor: pointer; }
+
+        .layout-catalogo-columnas { display: flex; gap: 40px; height: 100%; flex: 1; }
+        .grid-catalogo-scroll { flex: 2; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); grid-auto-rows: max-content; gap: 20px; align-content: flex-start; padding-right: 15px; }
         
-        .carta-dispositivo { background: rgba(31, 40, 51, 0.6); border: 2px solid rgba(102, 252, 241, 0.1); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; box-sizing: border-box; }
+        .carta-dispositivo { 
+            background: rgba(31, 40, 51, 0.6); border: 2px solid rgba(102, 252, 241, 0.1); border-radius: 12px; padding: 20px; 
+            text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; 
+            align-items: center; gap: 5px; position: relative; box-sizing: border-box; overflow: hidden;
+        }
         .carta-dispositivo:hover { background: rgba(102, 252, 241, 0.1); transform: translateY(-5px); }
         .carta-seleccionada { border-color: #66fcf1; background: rgba(102, 252, 241, 0.15); box-shadow: 0 0 20px rgba(102,252,241,0.4); transform: translateY(-5px); }
         
-        .checkmark-seleccion { opacity: 0; visibility: hidden; position: absolute; top: 10px; right: 10px; background-color: #0056b3; color: white; font-size: 12px; font-weight: bold; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: all 0.2s ease; }
+        .checkmark-seleccion { opacity: 0; visibility: hidden; position: absolute; top: 10px; right: 10px; background-color: #0056b3; color: white; font-size: 12px; font-weight: bold; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: all 0.2s ease; z-index: 2; }
         .carta-seleccionada .checkmark-seleccion { opacity: 1; visibility: visible; }
 
-        .img-placeholder { width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; color: #555; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.05); }
-        .carta-dispositivo h4 { margin: 0; font-size: 15px; color: #fff; }
-        .carta-dispositivo span { font-size: 12px; color: #45a29e; font-weight: bold; }
+        /* NUEVO: PANEL INFO HOVER EFECTO */
+        .hover-info {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 12, 16, 0.95); backdrop-filter: blur(4px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px;
+            padding: 15px; box-sizing: border-box;
+            opacity: 0; transform: translateY(100%); transition: all 0.3s ease;
+            z-index: 1;
+        }
+        .carta-dispositivo:hover .hover-info { opacity: 1; transform: translateY(0); }
+        .hover-info .marcas-texto { font-size: 11.5px; color: #bbb; line-height: 1.3; margin-bottom: 5px; }
+        .hover-info .potencia-info { font-size: 13px; color: #45a29e; font-weight: bold; }
+        .hover-info .standby-info { font-size: 13px; color: #ff4d4d; font-weight: bold; }
+
+        /* IMÁGENES Y PLACEHOLDERS */
+        .img-placeholder { width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.05); }
+        .img-dispositivo { width: 70px; height: 70px; object-fit: cover; border-radius: 50%; margin-bottom: 5px; border: 2px solid rgba(102,252,241,0.3); background-color: #fff; } 
+        .carta-dispositivo h4 { margin: 0; font-size: 15px; color: #fff; line-height: 1.2; }
 
         .config-dispositivo { flex: 1; background: rgba(11, 12, 16, 0.6); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); padding: 30px; display: flex; flex-direction: column; gap: 20px; max-height: 100%; overflow-y: auto; }
-        label { font-size: 14px; color: #c5c6c7; margin-bottom: -10px; display: block; }
-        select, input[type="number"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #45a29e; background-color: #1f2833; color: white; box-sizing: border-box; font-size: 15px; }
-        .btn-accion { width: 100%; background-color: #45a29e; color: #0b0c10; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(69, 162, 158, 0.3); }
-        .btn-accion:hover:not(:disabled) { background-color: #66fcf1; box-shadow: 0 0 15px rgba(102, 252, 241, 0.6); }
         
-        #lista-dispositivos-agregados { flex-grow: 1; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; max-height: 200px; }
-        .item-lista-agregado { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; border-left: 3px solid #66fcf1; }
+        #lista-dispositivos-agregados { flex-grow: 1; margin-top: 10px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; max-height: 250px; }
 
+        /* OVERLAY HABITACIONES (Vista Casa) */
         .plano-casa { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; }
-        .habitacion-grid { background: rgba(31, 40, 51, 0.6); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .habitacion-grid { background: rgba(31, 40, 51, 0.6); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 150px;}
         .habitacion-grid h3 { margin: 0 0 15px 0; color: #c5c6c7; font-weight: normal; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
         
-        #grid-Cocina { border-top: 3px solid #66fcf1; }
-        #grid-Sala { border-top: 3px solid #ba68c8; }
-        #grid-Habitación\ Principal { border-top: 3px solid #66fcf1; }
-        #grid-Exterior { border-top: 3px solid #ba68c8; }
-
         .grid-items { display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; flex: 1; }
-        .icono-aparato { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid; border-radius: 8px; padding: 12px; width: 140px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
-        .icono-aparato:hover { transform: translateY(-5px); }
-        .icono-aparato strong { font-size: 14px; color: #fff; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .icono-aparato span { font-size: 11px; color: #aaa; }
+        .icono-aparato { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid; border-radius: 8px; padding: 15px; width: 160px; position: relative; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+        .icono-aparato:hover { transform: translateY(-3px); }
+        .icono-aparato strong { font-size: 14px; color: #fff; margin-bottom: 5px; padding-right: 20px; }
+        .icono-aparato span { font-size: 11px; color: #aaa; margin-top: 2px;}
         .borde-desconectable { border-left-color: #ffb74d; }
         .borde-fijo { border-left-color: #90caf9; }
+        
+        .btn-eliminar-aparato { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #ff4d4d; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .btn-eliminar-aparato:hover { transform: scale(1.3); }
+
         .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
         .dot-on { background-color: #66fcf1; box-shadow: 0 0 5px #66fcf1; }
         .dot-off { background-color: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
@@ -133,8 +146,9 @@
         <h1 class="titulo-vista">SMART HOME</h1>
         
         <div class="contenedor-botones-flotantes">
-            <button class="btn-flotante" onclick="toggleOverlay('overlay-catalogo')">➕ Agregar Dispositivo</button>
-            <button class="btn-flotante" onclick="toggleOverlay('overlay-habitaciones')">🏠 Ver Mi Casa</button>
+            <button class="btn-flotante" onclick="toggleOverlay('overlay-modelar-casa')">🏠 1. Modelar Casa</button>
+            <button class="btn-flotante" onclick="toggleOverlay('overlay-catalogo')">➕ 2. Agregar Dispositivos</button>
+            <button class="btn-flotante" onclick="toggleOverlay('overlay-habitaciones')">👁️ 3. Ver Mi Casa</button>
         </div>
         
         <div id="reloj-simulacion">00:00</div>
@@ -151,11 +165,10 @@
             </div>
         </div>
 
-        <!-- Chat Flotante IA -->
         <div id="panel-chat-ia" class="oculto">
             <div class="header-chat">
                 <h3>🤖 Gemma 4 Analyst</h3>
-                <button class="btn-cerrar-chat" onclick="cerrarChatIA()">✖</button>
+                <button class="btn-cerrar" onclick="cerrarChatIA()">✖</button>
             </div>
             <div class="cuerpo-chat">
                 <p id="mensaje-ia-texto">Esperando ejecución de simulación...</p>
@@ -163,116 +176,317 @@
             </div>
         </div>
 
-        <!-- Botón de Simulación Global Flotante -->
         <button id="btn-chat-ia" onclick="manejarClickBotonFlotante()">
             <span id="icono-btn-ia">🤖</span>
             <div id="badge-ia" class="oculto"></div>
         </button>
 
-        <!-- OVERLAY CATÁLOGO -->
-        <div id="overlay-catalogo" class="overlay-panel oculto">
+        <!-- OVERLAY 1: MODELAR CASA -->
+        <div id="overlay-modelar-casa" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Catálogo de Dispositivos</h2>
-                <button class="btn-cerrar-overlay" onclick="toggleOverlay('overlay-catalogo')">✖</button>
+                <h2>Diseña los Espacios de tu Casa</h2>
+                <button class="btn-cerrar" onclick="toggleOverlay('overlay-modelar-casa')">✖</button>
             </div>
-            <div class="layout-catalogo">
-                <div class="grid-catalogo-scroll" id="grid-catalogo"></div>
-                <div class="config-dispositivo">
-                    <h3 id="txt-nombre-seleccion" style="color: #66fcf1; margin-top:0; border-bottom:1px solid #333; padding-bottom:15px;">Selecciona un dispositivo</h3>
+            <div style="max-width: 600px; margin: 0 auto; width: 100%;">
+                <div style="background: rgba(31, 40, 51, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(102, 252, 241, 0.2);">
+                    <p style="color: #aaa; margin-top: 0;">Agrega las zonas, habitaciones o áreas que componen tu hogar. Podrás asignar dispositivos a estas áreas más adelante.</p>
                     
-                    <label>Habitación de destino:</label>
-                    <select id="select-habitacion">
-                        <option value="Cocina">Cocina</option>
-                        <option value="Sala">Sala</option>
-                        <option value="Habitación Principal">Habitación Principal</option>
-                        <option value="Exterior">Exterior</option>
-                    </select>
-
-                    <div id="opciones-variables">
-                        <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 13px; margin: 0; background: rgba(69, 162, 158, 0.1); padding: 10px; border-radius: 8px;"></p>
-                        
-                        <div id="div-minutos" style="margin-top: 20px;">
-                            <label>Minutos de uso al día:</label>
-                            <input type="number" id="input-minutos" value="30" min="1" max="1440" style="margin-top: 15px;">
-                        </div>
-                        
-                        <div id="div-conexion" style="display: flex; align-items: center; margin-top: 20px;">
-                            <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
-                            <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
-                        </div>
-
-                        <div style="display: flex; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
-                            <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
-                            <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar (Físicamente)?</label>
-                        </div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <input type="text" id="input-nueva-hab" placeholder="Ej. Habitación Principal, Balcón, Baño..." onkeypress="if(event.key === 'Enter') agregarHabitacion()">
+                        <button class="btn-accion" style="width: auto; padding: 12px 25px;" onclick="agregarHabitacion()">Agregar</button>
                     </div>
-                    
-                    <button class="btn-accion" style="margin-top: 20px;" onclick="agregarDispositivo()">➕ Instalar en la casa</button>
 
-                    <div id="lista-dispositivos-agregados">
-                        <span style="color:#aaa; font-size:12px; font-style:italic;">Aún no has agregado dispositivos.</span>
+                    <h3 style="color: #66fcf1; border-bottom: 1px solid #333; padding-bottom: 10px;">Tus Habitaciones</h3>
+                    <div id="lista-habitaciones-creadas" class="lista-elegante">
+                        <!-- Se llena con JS -->
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- OVERLAY HABITACIONES -->
+        <!-- OVERLAY 2: CATÁLOGO DE DISPOSITIVOS -->
+        <div id="overlay-catalogo" class="overlay-panel oculto">
+            <div class="header-overlay">
+                <h2>Catálogo de Dispositivos</h2>
+                <button class="btn-cerrar" onclick="toggleOverlay('overlay-catalogo')">✖</button>
+            </div>
+            
+            <div class="layout-catalogo">
+                <div class="filtros-container">
+                    <input type="text" id="input-buscador" placeholder="🔍 Buscar por nombre o marca..." onkeyup="filtrarCatalogo()">
+                    <select id="filtro-zona" onchange="filtrarCatalogo()">
+                        <option value="Todas">Todas las Zonas</option>
+                        <option value="Cocina">Cocina</option>
+                        <option value="Sala">Sala / Entretenimiento</option>
+                        <option value="Habitación">Habitación / Estudio</option>
+                        <option value="Baño">Baño</option>
+                        <option value="Zona de Ropa">Zona de Ropa / Limpieza</option>
+                        <option value="Exterior">Exterior / Garaje</option>
+                        <option value="General">Uso General</option>
+                    </select>
+                </div>
+
+                <div class="layout-catalogo-columnas">
+                    <div class="grid-catalogo-scroll" id="grid-catalogo"></div>
+                    
+                    <div class="config-dispositivo">
+                        <h3 id="txt-nombre-seleccion" style="color: #66fcf1; margin-top:0; border-bottom:1px solid #333; padding-bottom:15px;">Selecciona un dispositivo</h3>
+                        
+                        <label style="margin-bottom: 5px;">Habitación de destino:</label>
+                        <select id="select-habitacion">
+                            <!-- Se llena dinámicamente con las habitaciones creadas -->
+                        </select>
+
+                        <div id="opciones-variables">
+                            <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 13px; margin: 0; background: rgba(69, 162, 158, 0.1); padding: 10px; border-radius: 8px;"></p>
+                            
+                            <div id="div-minutos" style="margin-top: 15px;">
+                                <label style="margin-bottom: 5px;">Minutos de uso al día:</label>
+                                <input type="number" id="input-minutos" value="30" min="1" max="1440">
+                            </div>
+                            
+                            <div id="div-conexion" style="display: flex; align-items: center; margin-top: 20px;">
+                                <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
+                                <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
+                            </div>
+
+                            <div style="display: flex; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
+                                <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
+                                <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar (Físicamente)?</label>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-accion" style="margin-top: 15px;" onclick="instalarDispositivo()">➕ Instalar en la casa</button>
+
+                        <h4 style="color:#aaa; margin-top:20px; margin-bottom:0;">Dispositivos Instalados:</h4>
+                        <div id="lista-dispositivos-agregados">
+                            <!-- Se llena con JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY 3: VER HABITACIONES -->
         <div id="overlay-habitaciones" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Dispositivos por Habitación</h2>
-                <button class="btn-cerrar-overlay" onclick="toggleOverlay('overlay-habitaciones')">✖</button>
+                <h2>Plano de tu Casa</h2>
+                <button class="btn-cerrar" onclick="toggleOverlay('overlay-habitaciones')">✖</button>
             </div>
-            <div class="plano-casa">
-                <div class="habitacion-grid" id="grid-Cocina"><h3>Cocina</h3><div class="grid-items"></div></div>
-                <div class="habitacion-grid" id="grid-Sala"><h3>Sala</h3><div class="grid-items"></div></div>
-                <div class="habitacion-grid" id="grid-Habitación Principal"><h3>Habitación Principal</h3><div class="grid-items"></div></div>
-                <div class="habitacion-grid" id="grid-Exterior"><h3>Exterior</h3><div class="grid-items"></div></div>
+            <div class="plano-casa" id="plano-grid-dinamico">
+                <!-- Se generan los cuadros de las habitaciones por JS -->
             </div>
         </div>
     </div>
 
     <script>
+        // ----------------------------------------------------
+        // 1. BASE DE DATOS Y ESTADO GLOBAL
+        // ----------------------------------------------------
         function toggleOverlay(id) { document.getElementById(id).classList.toggle('oculto'); }
 
         const catalogoExcel = [
-            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable", desconectable: true, icono: "🍳" },
-            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable", desconectable: true, icono: "♨️" },
-            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable", desconectable: true, icono: "📺" },
-            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable", desconectable: true, icono: "🥪" },
-            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo", desconectable: false, icono: "❄️" },
-            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo", desconectable: false, icono: "🌐" }
+            { id: 0, zona: "Cocina", nombre: "Refrigerador", marcas: "Haceb, LG, Samsung", watts_activos: 300.0, watts_standby: 2.25, tipo: "ciclo", desconectable: false, icono: "❄️" },
+            { id: 1, zona: "Zona de Ropa", nombre: "Hidrolavadora", marcas: "Karcher, Black+Decker", watts_activos: 1600.0, watts_standby: 0.0, tipo: "variable", desconectable: false, icono: "💦" },
+            { id: 2, zona: "Zona de Ropa", nombre: "Plancha de ropa", marcas: "Oster, Black+Decker", watts_activos: 1500.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "👔" },
+            { id: 3, zona: "General", nombre: "Ventilador", marcas: "Samurai, Kalley, Vornado", watts_activos: 60.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "🌀" },
+            { id: 4, zona: "Cocina", nombre: "Cafetera", marcas: "Oster, Black+Decker, Kalley", watts_activos: 900.0, watts_standby: 2.25, tipo: "variable", desconectable: true, icono: "☕" },
+            { id: 5, zona: "Sala", nombre: "Televisor", marcas: "LG, Samsung, TCL, Kalley", watts_activos: 80.0, watts_standby: 1.65, tipo: "variable", desconectable: true, icono: "📺" },
+            { id: 6, zona: "Zona de Ropa", nombre: "Lavadora de ropa", marcas: "LG, Samsung, Whirlpool", watts_activos: 500.0, watts_standby: 2.0, tipo: "variable", desconectable: false, icono: "👕" },
+            { id: 7, zona: "Habitación", nombre: "Cargador", marcas: "Apple, Samsung, Motorola", watts_activos: 15.0, watts_standby: 0.26, tipo: "variable", desconectable: true, icono: "🔌" },
+            { id: 8, zona: "Sala", nombre: "Router Wi-Fi", marcas: "TP-Link, Huawei, Genérico", watts_activos: 10.0, watts_standby: 7.0, tipo: "continuo", desconectable: false, icono: "🌐" },
+            { id: 9, zona: "Cocina", nombre: "Licuadora", marcas: "Oster, Imusa, Samurai", watts_activos: 500.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🥤" },
+            { id: 10, zona: "Cocina", nombre: "Microondas", marcas: "LG, Samsung, Panasonic", watts_activos: 1000.0, watts_standby: 3.25, tipo: "variable", desconectable: true, icono: "🍱" },
+            { id: 11, zona: "Habitación", nombre: "PC de Escritorio", marcas: "HP, Lenovo, Dell", watts_activos: 250.0, watts_standby: 3.5, tipo: "variable", desconectable: true, icono: "🖥️" },
+            { id: 12, zona: "Sala", nombre: "Decodificador TV", marcas: "Claro, Tigo, DirecTV", watts_activos: 10.0, watts_standby: 9.5, tipo: "continuo", desconectable: false, icono: "📡" },
+            { id: 13, zona: "Sala", nombre: "Equipo de sonido", marcas: "Sony, LG, Panasonic", watts_activos: 100.0, watts_standby: 3.75, tipo: "variable", desconectable: true, icono: "🔊" },
+            { id: 14, zona: "Cocina", nombre: "Sandwichera / Waflera", marcas: "Oster, Kalley, Black+Decker", watts_activos: 800.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🥪" },
+            { id: 15, zona: "Baño", nombre: "Secador de pelo", marcas: "Remington, Gama, Conair", watts_activos: 1500.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "💇" },
+            { id: 16, zona: "Zona de Ropa", nombre: "Aspiradora", marcas: "Karcher, Electrolux", watts_activos: 1000.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🧹" },
+            { id: 17, zona: "General", nombre: "Aspiradora robot", marcas: "Roomba, Xiaomi, EZVIZ", watts_activos: 30.0, watts_standby: 1.25, tipo: "variable", desconectable: true, icono: "🤖" },
+            { id: 18, zona: "Habitación", nombre: "Laptop / Portátil", marcas: "HP, Lenovo, Asus, Apple", watts_activos: 65.0, watts_standby: 1.25, tipo: "variable", desconectable: true, icono: "💻" },
+            { id: 19, zona: "Cocina", nombre: "Olla arrocera", marcas: "Imusa, Oster, Kalley", watts_activos: 500.0, watts_standby: 1.75, tipo: "variable", desconectable: true, icono: "🍲" },
+            { id: 20, zona: "Habitación", nombre: "Monitor PC", marcas: "LG, Samsung, Dell, Asus", watts_activos: 40.0, watts_standby: 0.9, tipo: "variable", desconectable: true, icono: "🖥️" },
+            { id: 21, zona: "Baño", nombre: "Calentador de agua", marcas: "Boccherini, Haceb, Bosch", watts_activos: 4000.0, watts_standby: 0.75, tipo: "variable", desconectable: false, icono: "🚿" },
+            { id: 22, zona: "Cocina", nombre: "Air-fryer", marcas: "Oster, Philips, Imusa", watts_activos: 1400.0, watts_standby: 0.75, tipo: "variable", desconectable: true, icono: "🍟", url_imagen: "DISPOSITIVOS/Air Fryer.png" },
+            { id: 23, zona: "Cocina", nombre: "Estufa eléctrica", marcas: "Haceb, Abba, Challenger", watts_activos: 3000.0, watts_standby: 1.0, tipo: "variable", desconectable: false, icono: "🍳" },
+            { id: 24, zona: "Cocina", nombre: "Batidora", marcas: "KitchenAid, Oster, Samurai", watts_activos: 300.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🥣" },
+            { id: 25, zona: "Sala", nombre: "Asistente de voz", marcas: "Amazon, Google, Apple", watts_activos: 5.0, watts_standby: 2.25, type: "continuo", desconectable: true, icono: "🗣️" },
+            { id: 26, zona: "Baño", nombre: "Plancha de pelo", marcas: "Remington, Babyliss", watts_activos: 50.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "💆" },
+            { id: 27, zona: "Cocina", nombre: "Campana extractora", marcas: "Haceb, Challenger, Abba", watts_activos: 150.0, watts_standby: 0.25, tipo: "variable", desconectable: false, icono: "💨" },
+            { id: 28, zona: "Zona de Ropa", nombre: "Secadora de ropa", marcas: "LG, Samsung, Whirlpool", watts_activos: 2500.0, watts_standby: 2.75, tipo: "variable", desconectable: false, icono: "👚" },
+            { id: 29, zona: "Cocina", nombre: "Hervidor de agua", marcas: "Oster, Kalley, Samurai", watts_activos: 1500.0, watts_standby: 0.5, tipo: "variable", desconectable: true, icono: "🫖" },
+            { id: 30, zona: "Habitación", nombre: "Impresora", marcas: "HP, Epson, Canon", watts_activos: 30.0, watts_standby: 3.5, tipo: "variable", desconectable: true, icono: "🖨️" },
+            { id: 31, zona: "Zona de Ropa", nombre: "Lavasecadora combinada", marcas: "LG, Samsung, Hisense", watts_activos: 2000.0, watts_standby: 2.75, tipo: "variable", desconectable: false, icono: "🔄" },
+            { id: 32, zona: "Sala", nombre: "Barra de sonido", marcas: "Samsung, Sony, Bose", watts_activos: 50.0, watts_standby: 1.75, tipo: "variable", desconectable: true, icono: "🔈" },
+            { id: 33, zona: "Sala", nombre: "Consola videojuegos", marcas: "Sony, Microsoft, Nintendo", watts_activos: 120.0, watts_standby: 8.0, tipo: "variable", desconectable: true, icono: "🎮" },
+            { id: 34, zona: "Cocina", nombre: "Freidora de aceite", marcas: "Oster, Black+Decker", watts_activos: 1800.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "🍗" },
+            { id: 35, zona: "Baño", nombre: "Cepillo de dientes", marcas: "Oral-B, Philips", watts_activos: 2.0, watts_standby: 0.45, tipo: "variable", desconectable: true, icono: "🪥" },
+            { id: 36, zona: "Cocina", nombre: "Tostadora de pan", marcas: "Oster, Black+Decker", watts_activos: 900.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🍞" },
+            { id: 37, zona: "Cocina", nombre: "Horno eléctrico integrado", marcas: "Challenger, Whirlpool, Bosch", watts_activos: 1500.0, watts_standby: 3.0, tipo: "variable", desconectable: false, icono: "♨️" },
+            { id: 38, zona: "Cocina", nombre: "Lavavajillas", marcas: "Whirlpool, LG, KitchenAid", watts_activos: 1500.0, watts_standby: 2.25, tipo: "variable", desconectable: false, icono: "🍽️" },
+            { id: 39, zona: "Habitación", nombre: "Masajeador eléctrico", marcas: "Gama, Homedics", watts_activos: 40.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "💆‍♂️" },
+            { id: 40, zona: "Exterior", nombre: "Soplador de hojas", marcas: "Black+Decker, Truper", watts_activos: 2000.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🍃" },
+            { id: 41, zona: "Cocina", nombre: "Congelador", marcas: "Haceb, Whirlpool, Electrolux", watts_activos: 250.0, watts_standby: 1.75, tipo: "ciclo", desconectable: false, icono: "🧊" },
+            { id: 42, zona: "Exterior", nombre: "Desbrozadora", marcas: "Black+Decker, Truper", watts_activos: 600.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🌿" },
+            { id: 43, zona: "Habitación", nombre: "Manta térmica", marcas: "Genérica, Beurer", watts_activos: 100.0, watts_standby: 0.5, tipo: "variable", desconectable: true, icono: "🛏️" },
+            { id: 44, zona: "Exterior", nombre: "Cortacésped", marcas: "Black+Decker, Husqvarna", watts_activos: 1400.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🌱" },
+            { id: 45, zona: "General", nombre: "Persianas automáticas", marcas: "Somfy, Ikea, Tuya", watts_activos: 40.0, watts_standby: 1.25, tipo: "variable", desconectable: false, icono: "🪟" },
+            { id: 46, zona: "Exterior", nombre: "Motor de garaje", marcas: "LiftMaster, Chamberlain", watts_activos: 500.0, watts_standby: 4.0, tipo: "variable", desconectable: false, icono: "🚪" },
+            { id: 47, zona: "Exterior", nombre: "Cerraduras smart", marcas: "Yale, Samsung, August", watts_activos: 2.0, watts_standby: 1.0, tipo: "continuo", desconectable: false, icono: "🔒" },
+            { id: 48, zona: "Exterior", nombre: "Cámaras seguridad", marcas: "EZVIZ, Xiaomi, Tapo", watts_activos: 4.0, watts_standby: 3.0, tipo: "continuo", desconectable: false, icono: "📹" },
+            { id: 49, zona: "Zona de Ropa", nombre: "Máquina de coser", marcas: "Singer, Brother", watts_activos: 70.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🧵" },
+            { id: 50, zona: "Zona de Ropa", nombre: "Centro de planchado", marcas: "Rowenta, Philips", watts_activos: 2000.0, watts_standby: 1.0, tipo: "variable", desconectable: true, icono: "👔" },
+            { id: 51, zona: "Baño", nombre: "Tensiómetro digital", marcas: "Omron, Beurer", watts_activos: 2.0, watts_standby: 0.05, tipo: "variable", desconectable: true, icono: "❤️" },
+            { id: 52, zona: "Zona de Ropa", nombre: "Mopa a vapor", marcas: "Karcher, Black+Decker", watts_activos: 1200.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "✨" },
+            { id: 53, zona: "General", nombre: "Fuente agua mascotas", marcas: "Catit, Xiaomi, PetSafe", watts_activos: 2.0, watts_standby: 1.5, tipo: "ciclo", desconectable: true, icono: "⛲" },
+            { id: 54, zona: "Baño", nombre: "Báscula de baño", marcas: "Xiaomi, Omron, Beurer", watts_activos: 1.0, watts_standby: 0.05, tipo: "variable", desconectable: true, icono: "⚖️" },
+            { id: 55, zona: "General", nombre: "Arenero automático", marcas: "Litter-Robot, PetSafe", watts_activos: 20.0, watts_standby: 3.5, tipo: "ciclo", desconectable: true, icono: "🐈" },
+            { id: 56, zona: "Baño", nombre: "Cortaúñas eléctrico", marcas: "Dremel, Wahl, Genérico", watts_activos: 10.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "✂️" },
+            { id: 57, zona: "Cocina", nombre: "Esterilizador bebé", marcas: "Avent, Dr. Browns", watts_activos: 500.0, watts_standby: 0.5, tipo: "variable", desconectable: true, icono: "🍼" },
+            { id: 58, zona: "General", nombre: "Dispensador comida", marcas: "Xiaomi, PetSafe", watts_activos: 5.0, watts_standby: 2.0, tipo: "continuo", desconectable: true, icono: "🥣" },
+            { id: 59, zona: "Cocina", nombre: "Crock-pot", marcas: "Oster, Hamilton Beach", watts_activos: 250.0, watts_standby: 1.0, tipo: "variable", desconectable: true, icono: "🍲" },
+            { id: 60, zona: "Baño", nombre: "Depiladora", marcas: "Braun, Philips, Remington", watts_activos: 10.0, watts_standby: 0.3, tipo: "variable", desconectable: true, icono: "🦵" },
+            { id: 61, zona: "Cocina", nombre: "Procesador alimentos", marcas: "Oster, Black+Decker, Philips", watts_activos: 500.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🥗" },
+            { id: 62, zona: "Cocina", nombre: "Exprimidor cítricos", marcas: "Oster, Black+Decker, Imusa", watts_activos: 50.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🍊" },
+            { id: 63, zona: "Cocina", nombre: "Extractor de jugos", marcas: "Oster, Philips, Kalley", watts_activos: 400.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🍎" },
+            { id: 64, zona: "Cocina", nombre: "Panificadora", marcas: "Oster, Cuisinart, Recco", watts_activos: 600.0, watts_standby: 1.5, tipo: "variable", desconectable: true, icono: "🥖" },
+            { id: 65, zona: "Cocina", nombre: "Máquina de hielo", marcas: "Challenger, Kalley", watts_activos: 150.0, watts_standby: 1.5, tipo: "variable", desconectable: true, icono: "🧊" },
+            { id: 66, zona: "Cocina", nombre: "Cuchillo eléctrico", marcas: "Oster, Black+Decker", watts_activos: 120.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🔪" },
+            { id: 67, zona: "Cocina", nombre: "Abrelatas eléctrico", marcas: "Oster, Hamilton Beach", watts_activos: 60.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🥫" },
+            { id: 68, zona: "Cocina", nombre: "Báscula de cocina", marcas: "Genérica, Truper, Camry", watts_activos: 1.0, watts_standby: 0.05, tipo: "variable", desconectable: true, icono: "⚖️" },
+            { id: 69, zona: "Cocina", nombre: "Triturador lavaplatos", marcas: "InSinkErator, Teka", watts_activos: 500.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "♻️" },
+            { id: 70, zona: "Baño", nombre: "Irrigador dental", marcas: "Waterpik, Oral-B", watts_activos: 18.0, watts_standby: 0.3, tipo: "variable", desconectable: true, icono: "🦷" },
+            { id: 71, zona: "Cocina", nombre: "Envasadora al vacío", marcas: "Oster, FoodSaver", watts_activos: 120.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "🥩" },
+            { id: 72, zona: "General", nombre: "AC Portátil", marcas: "Oster, Kalley, Hisense", watts_activos: 1000.0, watts_standby: 2.0, tipo: "variable", desconectable: true, icono: "❄️" },
+            { id: 73, zona: "Cocina", nombre: "Molino de café", marcas: "Oster, Hamilton Beach", watts_activos: 150.0, watts_standby: 0.0, tipo: "variable", desconectable: true, icono: "🫘" },
+            { id: 74, zona: "General", nombre: "Calefactor", marcas: "Oster, Bionaire, Recco", watts_activos: 1500.0, watts_standby: 0.75, tipo: "variable", desconectable: true, icono: "🔥" },
+            { id: 75, zona: "General", nombre: "Purificador de aire", marcas: "Xiaomi, Philips, Dyson", watts_activos: 40.0, watts_standby: 1.25, tipo: "variable", desconectable: true, icono: "🍃" },
+            { id: 76, zona: "General", nombre: "Deshumidificador", marcas: "Oster, Bionaire, Honeywell", watts_activos: 300.0, watts_standby: 1.25, tipo: "variable", desconectable: true, icono: "💧" },
+            { id: 77, zona: "General", nombre: "Humidificador", marcas: "Xiaomi, Vicks, Crane", watts_activos: 35.0, watts_standby: 0.75, tipo: "variable", desconectable: true, icono: "🌫️" },
+            { id: 78, zona: "Exterior", nombre: "Taladro eléctrico", marcas: "DeWalt, Bosch, Makita", watts_activos: 500.0, watts_standby: 0.25, tipo: "variable", desconectable: true, icono: "🪛" },
+            { id: 79, zona: "Cocina", nombre: "Vinoteca / Cava", marcas: "Challenger, Kalley, Haceb", watts_activos: 100.0, watts_standby: 1.5, tipo: "ciclo", desconectable: false, icono: "🍷" },
+            { id: 80, zona: "Sala", nombre: "Proyector de video", marcas: "Epson, ViewSonic, LG", watts_activos: 250.0, watts_standby: 2.5, tipo: "variable", desconectable: true, icono: "📽️" },
+            { id: 81, zona: "General", nombre: "AC Split", marcas: "LG, Samsung, Mabe, Haceb", watts_activos: 1200.0, watts_standby: 3.0, tipo: "variable", desconectable: true, icono: "❄️" },
+            { id: 82, zona: "Exterior", nombre: "Bomba de agua", marcas: "Pedrollo, Barnes, Truper", watts_activos: 750.0, watts_standby: 1.0, tipo: "variable", desconectable: false, icono: "💧" }
         ];
 
-        let casaUsuario = {};
+        let habitacionesCreadas = ["Sala", "Cocina", "Habitación Principal", "Baño"]; 
+        let casaUsuario = { "Sala": [], "Cocina": [], "Habitación Principal": [], "Baño": [] }; 
+        
         let indexSeleccionado = 0;
-        let estadoBotonFlotante = 'IDLE'; // IDLE, CALCULANDO, LISTO
+        let estadoBotonFlotante = 'IDLE'; 
 
-        window.onload = () => { renderizarCatalogoGrid(); };
+        window.onload = () => { 
+            actualizarTodoElUI(); 
+            filtrarCatalogo(); 
+        };
 
-        function renderizarCatalogoGrid() {
+        function agregarHabitacion() {
+            const input = document.getElementById('input-nueva-hab');
+            const nombre = input.value.trim();
+            if(nombre === "") return;
+            
+            if(!habitacionesCreadas.includes(nombre)) {
+                habitacionesCreadas.push(nombre);
+                casaUsuario[nombre] = [];
+                actualizarTodoElUI();
+                input.value = "";
+            } else {
+                alert("Esa habitación ya existe.");
+            }
+        }
+
+        function eliminarHabitacion(nombre) {
+            habitacionesCreadas = habitacionesCreadas.filter(h => h !== nombre);
+            delete casaUsuario[nombre]; 
+            actualizarTodoElUI();
+            
+            estadoBotonFlotante = 'IDLE'; 
+            document.getElementById('icono-btn-ia').innerText = '🤖';
+            document.getElementById('badge-ia').classList.add('oculto');
+        }
+
+        function actualizarTodoElUI() {
+            const listaMod = document.getElementById('lista-habitaciones-creadas');
+            listaMod.innerHTML = '';
+            habitacionesCreadas.forEach(hab => {
+                listaMod.innerHTML += `
+                    <div class="item-lista">
+                        <span>${hab}</span>
+                        <button class="btn-eliminar-small" onclick="eliminarHabitacion('${hab}')">✖</button>
+                    </div>`;
+            });
+
+            const selector = document.getElementById('select-habitacion');
+            selector.innerHTML = '';
+            habitacionesCreadas.forEach(hab => {
+                selector.innerHTML += `<option value="${hab}">${hab}</option>`;
+            });
+
+            const plano = document.getElementById('plano-grid-dinamico');
+            plano.innerHTML = '';
+            habitacionesCreadas.forEach(hab => {
+                const safeId = 'grid-' + hab.replace(/\s+/g, '-');
+                plano.innerHTML += `
+                    <div class="habitacion-grid" style="border-top: 3px solid #66fcf1;">
+                        <h3>${hab}</h3>
+                        <div class="grid-items" id="${safeId}"></div>
+                    </div>`;
+            });
+
+            renderizarCasa(); 
+            renderizarListaAgregadosEnCatalogo();
+        }
+
+        function filtrarCatalogo() {
+            const texto = document.getElementById('input-buscador').value.toLowerCase();
+            const zonaSelec = document.getElementById('filtro-zona').value;
+            
             const grid = document.getElementById('grid-catalogo');
             grid.innerHTML = '';
-            catalogoExcel.forEach((item, index) => {
-                const claseSeleccion = index === indexSeleccionado ? 'carta-seleccionada' : '';
-                grid.innerHTML += `
-                    <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${index})">
-                        <div class="checkmark-seleccion">✔</div>
-                        <div class="img-placeholder">${item.icono}</div>
-                        <h4>${item.nombre}</h4>
-                        <span>⚡ ~${item.watts_activos}W</span>
-                    </div>
-                `;
+            
+            catalogoExcel.forEach((item) => {
+                const matchTexto = item.nombre.toLowerCase().includes(texto) || item.marcas.toLowerCase().includes(texto);
+                const matchZona = (zonaSelec === "Todas" || item.zona === zonaSelec);
+                
+                if (matchTexto && matchZona) {
+                    const claseSeleccion = item.id === indexSeleccionado ? 'carta-seleccionada' : '';
+                    
+                    const imagenVisual = item.url_imagen 
+                        ? `<img src="${item.url_imagen}" class="img-dispositivo" alt="${item.nombre}">` 
+                        : `<div class="img-placeholder">${item.icono}</div>`;
+
+                    grid.innerHTML += `
+                        <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${item.id})">
+                            <div class="checkmark-seleccion">✔</div>
+                            
+                            ${imagenVisual}
+                            
+                            <h4>${item.nombre}</h4>
+                            
+                            <!-- INFO DETALLADA EN HOVER -->
+                            <div class="hover-info">
+                                <span class="marcas-texto"><strong>Marcas:</strong><br>${item.marcas}</span>
+                                <span class="potencia-info">⚡ Uso: ~${item.watts_activos}W</span>
+                                <span class="standby-info">🔌 Standby: ~${item.watts_standby}W</span>
+                            </div>
+                        </div>
+                    `;
+                }
             });
             actualizarFormularioUI();
         }
 
-        function seleccionarDispositivo(index) {
-            indexSeleccionado = index;
-            renderizarCatalogoGrid();
+        function seleccionarDispositivo(id) {
+            indexSeleccionado = id;
+            filtrarCatalogo();
         }
 
         function actualizarFormularioUI() {
-            const aparato = catalogoExcel[indexSeleccionado];
+            const aparato = catalogoExcel.find(item => item.id === indexSeleccionado);
+            if (!aparato) return;
+
             document.getElementById('txt-nombre-seleccion').innerText = `Configurando: ${aparato.nombre}`;
             const divMin = document.getElementById('div-minutos');
             const divCon = document.getElementById('div-conexion');
@@ -293,9 +507,14 @@
             }
         }
 
-        function agregarDispositivo() {
+        function instalarDispositivo() {
+            if (habitacionesCreadas.length === 0) {
+                alert("Primero debes modelar tu casa y crear al menos una habitación.");
+                return;
+            }
+
             const hab = document.getElementById('select-habitacion').value;
-            const aparato = catalogoExcel[indexSeleccionado];
+            const aparato = catalogoExcel.find(item => item.id === indexSeleccionado);
             let hrs = 0, conectado = true;
 
             if (aparato.tipo === "variable") {
@@ -305,7 +524,6 @@
                 hrs = 24 * 0.30; conectado = true;
             } else { hrs = 24; conectado = true; }
 
-            if (!casaUsuario[hab]) casaUsuario[hab] = [];
             casaUsuario[hab].push({
                 nombre: aparato.nombre, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
                 horas_uso: hrs, dejado_conectado: conectado, desconectable: document.getElementById('check-desconectable').checked
@@ -313,7 +531,17 @@
 
             renderizarCasa();
             renderizarListaAgregadosEnCatalogo();
-            estadoBotonFlotante = 'IDLE'; // Si agrega nuevo aparato, obliga a simular de nuevo
+            estadoBotonFlotante = 'IDLE'; 
+            document.getElementById('icono-btn-ia').innerText = '🤖';
+            document.getElementById('badge-ia').classList.add('oculto');
+        }
+
+        function eliminarDispositivo(hab, indexAparato) {
+            casaUsuario[hab].splice(indexAparato, 1);
+            renderizarCasa();
+            renderizarListaAgregadosEnCatalogo();
+            
+            estadoBotonFlotante = 'IDLE'; 
             document.getElementById('icono-btn-ia').innerText = '🤖';
             document.getElementById('badge-ia').classList.add('oculto');
         }
@@ -322,27 +550,39 @@
             const lista = document.getElementById('lista-dispositivos-agregados');
             lista.innerHTML = '';
             let contadorTotal = 0;
+            
             for (const [hab, aparatos] of Object.entries(casaUsuario)) {
-                aparatos.forEach(ap => {
+                aparatos.forEach((ap, index) => {
                     contadorTotal++;
-                    lista.innerHTML += `<div class="item-lista-agregado"><span><strong>${ap.nombre}</strong></span><span style="color:#aaa;">📍 ${hab}</span></div>`;
+                    lista.innerHTML += `
+                        <div class="item-lista-agregado">
+                            <span><strong>${ap.nombre}</strong> <span style="color:#aaa;">📍 ${hab}</span></span>
+                            <button class="btn-eliminar-small" onclick="eliminarDispositivo('${hab}', ${index})">✖</button>
+                        </div>`;
                 });
             }
             if(contadorTotal === 0) lista.innerHTML = `<span style="color:#aaa; font-size:12px; font-style:italic;">Aún no has agregado dispositivos.</span>`;
         }
 
         function renderizarCasa() {
-            document.querySelectorAll('.grid-items').forEach(el => el.innerHTML = '');
+            habitacionesCreadas.forEach(hab => {
+                const safeId = 'grid-' + hab.replace(/\s+/g, '-');
+                const cont = document.getElementById(safeId);
+                if(cont) cont.innerHTML = '';
+            });
+
             for (const [hab, aparatos] of Object.entries(casaUsuario)) {
-                const gridId = 'grid-' + hab.replace(/\s+/g, '\\ ');
-                const areaPlano = document.querySelector(`#${gridId} .grid-items`);
+                const safeId = 'grid-' + hab.replace(/\s+/g, '-');
+                const areaPlano = document.getElementById(safeId);
                 if(areaPlano) {
-                    aparatos.forEach(ap => {
+                    aparatos.forEach((ap, index) => {
                         const claseBorde = ap.desconectable ? 'borde-desconectable' : 'borde-fijo';
                         const dotClass = ap.dejado_conectado ? 'dot-on' : 'dot-off';
                         const txtEstado = ap.dejado_conectado ? 'Standby ON' : 'Apagado';
+                        
                         areaPlano.innerHTML += `
                             <div class="icono-aparato ${claseBorde}">
+                                <button class="btn-eliminar-aparato" onclick="eliminarDispositivo('${hab}', ${index})">✖</button>
                                 <strong>${ap.nombre}</strong>
                                 <span>⚡ Activo: ${ap.horas_uso.toFixed(1)}h</span>
                                 <span><i class="status-dot ${dotClass}"></i>${txtEstado}</span>
@@ -352,44 +592,39 @@
             }
         }
 
-        /* LÓGICA DEL BOTÓN FLOTANTE UNIFICADO */
         async function manejarClickBotonFlotante() {
-            if (Object.keys(casaUsuario).length === 0) {
-                alert("Para simular, primero debes agregar al menos un dispositivo a la casa.");
+            let totalEquipos = 0;
+            for (let h in casaUsuario) totalEquipos += casaUsuario[h].length;
+            
+            if (totalEquipos === 0) {
+                alert("Para simular, primero debes instalar al menos un dispositivo en tu casa.");
                 return;
             }
 
-            if (estadoBotonFlotante === 'IDLE') {
-                await ejecutarMotorTotal();
-            } else if (estadoBotonFlotante === 'LISTO') {
-                abrirChatIA();
-            }
+            if (estadoBotonFlotante === 'IDLE') await ejecutarMotorTotal();
+            else if (estadoBotonFlotante === 'LISTO') abrirChatIA();
         }
 
         function abrirChatIA() {
             document.getElementById('panel-chat-ia').classList.remove('oculto');
-            document.getElementById('badge-ia').classList.add('oculto'); // Se oculta notificación al leer
+            document.getElementById('badge-ia').classList.add('oculto'); 
         }
 
-        function cerrarChatIA() {
-            document.getElementById('panel-chat-ia').classList.add('oculto');
-        }
+        function cerrarChatIA() { document.getElementById('panel-chat-ia').classList.add('oculto'); }
 
         async function ejecutarMotorTotal() {
             estadoBotonFlotante = 'CALCULANDO';
             document.getElementById('icono-btn-ia').innerText = '⏳';
             document.getElementById('badge-ia').classList.add('oculto');
-            document.getElementById('panel-chat-ia').classList.add('oculto'); // Ocultar si estaba abierto
+            cerrarChatIA();
 
             const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
 
             try {
-                // 1. Matemáticas
                 const resMath = await fetch('http://127.0.0.1:8000/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!resMath.ok) throw new Error("Error en servidor.");
+                if (!resMath.ok) throw new Error("Error en servidor local.");
                 const datos = await resMath.json();
                 
-                // Preparar resumen de vampiros para el chat
                 let htmlVampiros = "";
                 if (datos.ranking_vampiros.length > 0) {
                     htmlVampiros = `<hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;"><h4 style="color:#ff4d4d; margin:0 0 10px 0;">Fugas en Reposo Detectadas:</h4>`;
@@ -399,29 +634,22 @@
                 }
                 document.getElementById('resumen-fugas').innerHTML = htmlVampiros;
 
-                // 2. Transición y Contadores
                 document.getElementById('panel-vista').style.animation = "none";
                 void document.getElementById('panel-vista').offsetWidth; 
                 document.getElementById('panel-vista').style.animation = "cicloDiaNoche 60s ease-in-out forwards";
                 animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop);
 
-                // 3. IA (Gemma 4)
                 document.getElementById('mensaje-ia-texto').innerText = "Gemma 4 está analizando tus datos...";
-                
                 const resIA = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: datos.prompt_generado }) });
                 const datosIA = await resIA.json();
-                
                 document.getElementById('mensaje-ia-texto').innerText = datosIA.mensaje_ia;
                 
-                // Estado final
                 estadoBotonFlotante = 'LISTO';
                 document.getElementById('icono-btn-ia').innerText = '🤖';
-                document.getElementById('badge-ia').classList.remove('oculto'); // Muestra punto rojo
-
+                document.getElementById('badge-ia').classList.remove('oculto'); 
             } catch (error) { 
                 alert(error.message);
-                estadoBotonFlotante = 'IDLE';
-                document.getElementById('icono-btn-ia').innerText = '🤖';
+                estadoBotonFlotante = 'IDLE'; document.getElementById('icono-btn-ia').innerText = '🤖';
             }
         }
 
@@ -434,16 +662,13 @@
             const txtCop = document.getElementById('live-cop');
             
             const duracion = 60000; const inicio = performance.now();
-
             function actualizar(tiempo) {
                 let progreso = (tiempo - inicio) / duracion;
                 if (progreso > 1) progreso = 1;
-
                 let minSim = Math.floor(progreso * 1440);
                 reloj.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
                 txtKwh.innerText = `${(progreso * kwhFinal).toFixed(2)} kWh`;
                 txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
-
                 if (progreso < 1) requestAnimationFrame(actualizar);
             }
             requestAnimationFrame(actualizar);
