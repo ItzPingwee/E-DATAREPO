@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Archivos temporales de Playwright MCP
+.playwright-mcp/

@@ -18,9 +18,9 @@ function renderizarCasa() {
                 
                 areaPlano.innerHTML += `
                     <div class="icono-aparato ${claseBorde}">
-                        <button class="btn-eliminar-aparato" onclick="eliminarDispositivo('${hab}', ${index})">✖</button>
+                        <button class="btn-eliminar-aparato" onclick="eliminarDispositivo('${hab}', ${index})" aria-label="Eliminar">×</button>
                         <strong>${ap.nombre}</strong>
-                        <span>⚡ Activo: ${ap.horas_uso.toFixed(1)}h</span>
+                        <span>Activo: ${ap.horas_uso.toFixed(1)} h</span>
                         <span><i class="status-dot ${dotClass}"></i>${txtEstado}</span>
                     </div>`;
             });

@@ -3,40 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <title>E-DATA Visual Simulator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    
+    <!-- Icono de la pestaña: una hoja verde sobre fondo oscuro (evita además el error 404 de favicon) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23050d0a'/%3E%3Cpath d='M16 6c5 3.5 7 8 4.5 13S12 25 11 25c-1-6 0-14 5-19z' fill='%2386d36c'/%3E%3C/svg%3E">
+
+    <!-- Tipografías: Instrument Serif (títulos) y Hanken Grotesk (interfaz y números) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@200;300;400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <div id="panel-vista">
-        <h1 class="titulo-vista">SMART HOME</h1>
-        
-        <div class="contenedor-botones-flotantes">
-            <button class="btn-flotante" onclick="toggleOverlay('overlay-modelar-casa')">🏠 1. Modelar Casa</button>
-            <button class="btn-flotante" onclick="toggleOverlay('overlay-catalogo')">➕ 2. Agregar Dispositivos</button>
-            <button class="btn-flotante" onclick="toggleOverlay('overlay-habitaciones')">👁️ 3. Ver Mi Casa</button>
-        </div>
-        
-        <div id="reloj-simulacion">00:00</div>
-        <img id="imagen-casa-render" src="casa_edata-Photoroom.png" alt="Render Casa 3D">
+        <h1 class="titulo-vista">Smart home</h1>
 
-        <div id="contadores-tiempo-real">
+        <!-- Dock de navegación: los tres pasos de la simulación, en orden -->
+        <nav class="dock vidrio" aria-label="Pasos de la simulación">
+            <button class="dock-btn" onclick="toggleOverlay('overlay-modelar-casa')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M10 20v-5h4v5"/></svg>
+                <span>Modelar casa</span>
+            </button>
+            <button class="dock-btn" onclick="toggleOverlay('overlay-catalogo')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0V8z"/><path d="M12 17v4"/></svg>
+                <span>Agregar dispositivos</span>
+            </button>
+            <button class="dock-btn" onclick="toggleOverlay('overlay-habitaciones')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Ver mi casa</span>
+            </button>
+        </nav>
+
+        <!-- Reloj: un sol y una luna recorren el arco del cielo; la hora digital va debajo -->
+        <div id="reloj-simulacion">
+            <div class="cielo">
+                <div class="estrellas"></div>
+                <div class="astro"></div>
+            </div>
+            <div id="hora-digital">00:00</div>
+        </div>
+
+        <div class="escena">
+            <img id="imagen-casa-render" src="casa_edata-Photoroom.png" alt="Render de la casa en 3D">
+        </div>
+
+        <div id="contadores-tiempo-real" class="vidrio">
             <div class="caja-contador">
-                <div class="label">Energía Acumulada</div>
+                <div class="label">Energía acumulada</div>
                 <div id="live-kwh" class="valor">0.00 kWh</div>
             </div>
             <div class="caja-contador">
-                <div class="label">Costo Proyectado</div>
+                <div class="label">Costo proyectado</div>
                 <div id="live-cop" class="valor">$0</div>
             </div>
         </div>
 
-        <div id="panel-chat-ia" class="oculto">
+        <div id="panel-chat-ia" class="vidrio oculto">
             <div class="header-chat">
-                <h3>🤖 Gemma 4 Analyst</h3>
-                <button class="btn-cerrar" onclick="cerrarChatIA()">✖</button>
+                <h3>Analista Gemma 4</h3>
+                <button class="btn-cerrar" aria-label="Cerrar" onclick="cerrarChatIA()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
             </div>
             <div class="cuerpo-chat">
                 <p id="mensaje-ia-texto">Esperando ejecución de simulación...</p>
@@ -44,27 +73,31 @@
             </div>
         </div>
 
-        <button id="btn-chat-ia" onclick="manejarClickBotonFlotante()">
-            <span id="icono-btn-ia">🤖</span>
+        <!-- Botón de la IA: muestra un destello en reposo y un anillo girando mientras calcula -->
+        <button id="btn-chat-ia" aria-label="Analizar con IA" onclick="manejarClickBotonFlotante()">
+            <svg class="icono-destello" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.7 5.2 2.8 7.3 8 8-5.2.7-7.3 2.8-8 8-.7-5.2-2.8-7.3-8-8 5.2-.7 7.3-2.8 8-8z"/><path d="M19 15.5c.3 2 1.1 2.8 3 3-1.9.2-2.7 1-3 3-.3-2-1.1-2.8-3-3 1.9-.2 2.7-1 3-3z"/></svg>
+            <svg class="icono-calculando" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
             <div id="badge-ia" class="oculto"></div>
         </button>
 
         <!-- OVERLAY 1: MODELAR CASA -->
         <div id="overlay-modelar-casa" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Diseña los Espacios de tu Casa</h2>
-                <button class="btn-cerrar" onclick="toggleOverlay('overlay-modelar-casa')">✖</button>
+                <h2>Diseña los espacios de tu casa</h2>
+                <button class="btn-cerrar" aria-label="Cerrar" onclick="toggleOverlay('overlay-modelar-casa')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
             </div>
-            <div style="max-width: 600px; margin: 0 auto; width: 100%;">
-                <div style="background: rgba(31, 40, 51, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(102, 252, 241, 0.2);">
-                    <p style="color: #aaa; margin-top: 0;">Agrega las zonas, habitaciones o áreas que componen tu hogar. Podrás asignar dispositivos a estas áreas más adelante.</p>
-                    
-                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                        <input type="text" id="input-nueva-hab" placeholder="Ej. Habitación Principal, Balcón, Baño..." onkeypress="if(event.key === 'Enter') agregarHabitacion()">
-                        <button class="btn-accion" style="width: auto; padding: 12px 25px;" onclick="agregarHabitacion()">Agregar</button>
+            <div class="hoja-centrada">
+                <div class="tarjeta-vidrio">
+                    <p class="texto-ayuda">Agrega las zonas, habitaciones o áreas que componen tu hogar. Podrás asignar dispositivos a estas áreas más adelante.</p>
+
+                    <div class="fila-agregar">
+                        <input type="text" id="input-nueva-hab" placeholder="Ej. Habitación principal, balcón, baño..." onkeypress="if(event.key === 'Enter') agregarHabitacion()">
+                        <button class="btn-accion btn-agregar-hab" onclick="agregarHabitacion()">Agregar</button>
                     </div>
 
-                    <h3 style="color: #66fcf1; border-bottom: 1px solid #333; padding-bottom: 10px;">Tus Habitaciones</h3>
+                    <h3 class="subtitulo">Tus habitaciones</h3>
                     <div id="lista-habitaciones-creadas" class="lista-elegante">
                         <!-- Se llena con JS -->
                     </div>
@@ -75,58 +108,67 @@
         <!-- OVERLAY 2: CATÁLOGO DE DISPOSITIVOS -->
         <div id="overlay-catalogo" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Catálogo de Dispositivos</h2>
-                <button class="btn-cerrar" onclick="toggleOverlay('overlay-catalogo')">✖</button>
+                <h2>Catálogo de dispositivos</h2>
+                <button class="btn-cerrar" aria-label="Cerrar" onclick="toggleOverlay('overlay-catalogo')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
             </div>
-            
+
             <div class="layout-catalogo">
                 <div class="filtros-container">
-                    <input type="text" id="input-buscador" placeholder="🔍 Buscar por nombre o marca..." onkeyup="filtrarCatalogo()">
-                    <select id="filtro-zona" onchange="filtrarCatalogo()">
-                        <option value="Todas">Todas las Zonas</option>
+                    <div class="campo-busqueda">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+                        <input type="text" id="input-buscador" placeholder="Buscar por nombre o marca..." onkeyup="filtrarCatalogo()">
+                    </div>
+                    <select id="filtro-zona" onchange="cambiarFiltroZona()">
+                        <option value="Todas">Todas las zonas</option>
                         <option value="Cocina">Cocina</option>
                         <option value="Sala">Sala / Entretenimiento</option>
                         <option value="Habitación">Habitación / Estudio</option>
                         <option value="Baño">Baño</option>
-                        <option value="Zona de Ropa">Zona de Ropa / Limpieza</option>
+                        <option value="Zona de Ropa">Zona de ropa / Limpieza</option>
                         <option value="Exterior">Exterior / Garaje</option>
-                        <option value="General">Uso General</option>
+                        <option value="General">Uso general</option>
                     </select>
                 </div>
 
                 <div class="layout-catalogo-columnas">
                     <div class="grid-catalogo-scroll" id="grid-catalogo"></div>
-                    
+
                     <div class="config-dispositivo">
-                        <h3 id="txt-nombre-seleccion" style="color: #66fcf1; margin-top:0; border-bottom:1px solid #333; padding-bottom:15px;">Selecciona un dispositivo</h3>
-                        
-                        <label style="margin-bottom: 5px;">Habitación de destino:</label>
-                        <select id="select-habitacion">
-                            <!-- Se llena dinámicamente con las habitaciones creadas -->
-                        </select>
+                        <h3 id="txt-nombre-seleccion">Selecciona un dispositivo</h3>
+
+                        <div>
+                            <label class="etiqueta" for="select-habitacion">Habitación de destino</label>
+                            <select id="select-habitacion">
+                                <!-- Se llena dinámicamente con las habitaciones creadas -->
+                            </select>
+                        </div>
 
                         <div id="opciones-variables">
-                            <p id="txt-info-fija" style="display: none; color: #45a29e; font-size: 13px; margin: 0; background: rgba(69, 162, 158, 0.1); padding: 10px; border-radius: 8px;"></p>
-                            
-                            <div id="div-minutos" style="margin-top: 15px;">
-                                <label style="margin-bottom: 5px;">Minutos de uso al día:</label>
+                            <p id="txt-info-fija" class="nota-fija"></p>
+
+                            <div id="div-minutos" class="campo-formulario">
+                                <label class="etiqueta" for="input-minutos">Minutos de uso al día</label>
                                 <input type="number" id="input-minutos" value="30" min="1" max="1440">
                             </div>
-                            
-                            <div id="div-conexion" style="display: flex; align-items: center; margin-top: 20px;">
-                                <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
-                                <label style="margin:0; cursor:pointer;" for="check-conectado">¿Dejar enchufado (Standby)?</label>
+
+                            <div id="div-conexion" class="fila-check">
+                                <input type="checkbox" id="check-conectado" checked>
+                                <label for="check-conectado">¿Dejar enchufado (standby)?</label>
                             </div>
 
-                            <div style="display: flex; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #333;">
-                                <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 15px; transform: scale(1.2);">
-                                <label style="margin:0; cursor:pointer; color:#ffb74d;" for="check-desconectable">¿Fácil de desconectar (Físicamente)?</label>
+                            <div class="fila-check separada">
+                                <input type="checkbox" id="check-desconectable" checked>
+                                <label for="check-desconectable">¿Fácil de desconectar físicamente?</label>
                             </div>
                         </div>
-                        
-                        <button class="btn-accion" style="margin-top: 15px;" onclick="instalarDispositivo()">➕ Instalar en la casa</button>
 
-                        <h4 style="color:#aaa; margin-top:20px; margin-bottom:0;">Dispositivos Instalados:</h4>
+                        <button class="btn-accion" onclick="instalarDispositivo()">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Instalar en la casa
+                        </button>
+
+                        <h4 class="titulo-instalados">Dispositivos instalados</h4>
                         <div id="lista-dispositivos-agregados">
                             <!-- Se llena con JS -->
                         </div>
@@ -138,8 +180,10 @@
         <!-- OVERLAY 3: VER HABITACIONES -->
         <div id="overlay-habitaciones" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Plano de tu Casa</h2>
-                <button class="btn-cerrar" onclick="toggleOverlay('overlay-habitaciones')">✖</button>
+                <h2>Plano de tu casa</h2>
+                <button class="btn-cerrar" aria-label="Cerrar" onclick="toggleOverlay('overlay-habitaciones')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
             </div>
             <div class="plano-casa" id="plano-grid-dinamico">
                 <!-- Se generan los cuadros de las habitaciones por JS -->
