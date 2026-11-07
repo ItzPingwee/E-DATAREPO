@@ -4,9 +4,18 @@
 // ----------------------------------------------------
 function toggleOverlay(id) { document.getElementById(id).classList.toggle('oculto'); }
 
+// El botón de IA muestra un destello en reposo y un anillo girando mientras calcula.
+// El cambio visual lo hace el CSS a partir de la clase 'calculando'.
+function mostrarBotonIACalculando(calculando) {
+    document.getElementById('btn-chat-ia').classList.toggle('calculando', calculando);
+}
+
 
 let habitacionesCreadas = ["Sala", "Cocina", "Habitación Principal", "Baño"]; 
 let casaUsuario = { "Sala": [], "Cocina": [], "Habitación Principal": [], "Baño": [] }; 
+
+// Duración de un día simulado (24 h): 2 minutos. Reloj, contadores y ciclo día/noche usan este mismo valor.
+const DURACION_SIMULACION_MS = 120000;
 
 let indexSeleccionado = 0;
 let estadoBotonFlotante = 'IDLE'; 
@@ -37,7 +46,7 @@ function eliminarHabitacion(nombre) {
     actualizarTodoElUI();
     
     estadoBotonFlotante = 'IDLE'; 
-    document.getElementById('icono-btn-ia').innerText = '🤖';
+    mostrarBotonIACalculando(false);
     document.getElementById('badge-ia').classList.add('oculto');
 }
 
@@ -48,7 +57,7 @@ function actualizarTodoElUI() {
         listaMod.innerHTML += `
             <div class="item-lista">
                 <span>${hab}</span>
-                <button class="btn-eliminar-small" onclick="eliminarHabitacion('${hab}')">✖</button>
+                <button class="btn-eliminar-small" onclick="eliminarHabitacion('${hab}')" aria-label="Eliminar">×</button>
             </div>`;
     });
 
@@ -63,7 +72,7 @@ function actualizarTodoElUI() {
     habitacionesCreadas.forEach(hab => {
         const safeId = 'grid-' + hab.replace(/\s+/g, '-');
         plano.innerHTML += `
-            <div class="habitacion-grid" style="border-top: 3px solid #66fcf1;">
+            <div class="habitacion-grid">
                 <h3>${hab}</h3>
                 <div class="grid-items" id="${safeId}"></div>
             </div>`;
@@ -93,7 +102,7 @@ function filtrarCatalogo() {
 
             grid.innerHTML += `
                 <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${item.id})">
-                    <div class="checkmark-seleccion">✔</div>
+                    <div class="checkmark-seleccion">✓</div>
                     
                     ${imagenVisual}
                     
@@ -102,8 +111,8 @@ function filtrarCatalogo() {
                     <!-- INFO DETALLADA EN HOVER -->
                     <div class="hover-info">
                         <span class="marcas-texto"><strong>Marcas:</strong><br>${item.marcas}</span>
-                        <span class="potencia-info">⚡ Uso: ~${item.watts_activos}W</span>
-                        <span class="standby-info">🔌 Standby: ~${item.watts_standby}W</span>
+                        <span class="potencia-info">Uso: ~${item.watts_activos} W</span>
+                        <span class="standby-info">Standby: ~${item.watts_standby} W</span>
                     </div>
                 </div>
             `;
@@ -114,6 +123,33 @@ function filtrarCatalogo() {
 
 function seleccionarDispositivo(id) {
     indexSeleccionado = id;
+    // Al elegir un dispositivo, la habitación de destino se ajusta a su zona (una nevera -> Cocina)
+    const aparato = catalogoExcel.find(item => item.id === id);
+    sincronizarHabitacionConZona(aparato.zona);
+    filtrarCatalogo();
+}
+
+// Quita tildes y mayúsculas para poder comparar textos ("Habitación" == "habitacion")
+function normalizarTexto(texto) {
+    return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+// Busca entre las habitaciones creadas una cuyo nombre contenga la zona y la deja seleccionada.
+// Ej.: zona "Cocina" -> "Cocina"; zona "Habitación" -> "Habitación Principal".
+// Si no hay coincidencia (o la zona es "Todas" / "General"), no cambia nada.
+function sincronizarHabitacionConZona(zona) {
+    if (zona === "Todas" || zona === "General") return;
+
+    const selector = document.getElementById('select-habitacion');
+    const zonaNormalizada = normalizarTexto(zona);
+    const habitacionCoincidente = habitacionesCreadas.find(hab => normalizarTexto(hab).includes(zonaNormalizada));
+
+    if (habitacionCoincidente) selector.value = habitacionCoincidente;
+}
+
+// Se ejecuta al cambiar el filtro de zona: sincroniza la habitación y actualiza el catálogo
+function cambiarFiltroZona() {
+    sincronizarHabitacionConZona(document.getElementById('filtro-zona').value);
     filtrarCatalogo();
 }
 
@@ -132,11 +168,11 @@ function actualizarFormularioUI() {
         chkDesc.checked = true;
     } else if (aparato.tipo === "ciclo") {
         divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-        txtInfo.innerHTML = "ℹ️ Motor cíclico: Funciona ~30% del día en modo automático.";
+        txtInfo.innerHTML = "Motor cíclico: funciona ~30% del día en modo automático.";
         chkDesc.checked = false;
     } else {
         divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-        txtInfo.innerHTML = "ℹ️ Equipo Continuo: Requiere conexión 24h activa.";
+        txtInfo.innerHTML = "Equipo continuo: requiere conexión 24 h activa.";
         chkDesc.checked = false;
     }
 }
@@ -166,7 +202,7 @@ function instalarDispositivo() {
     renderizarCasa();
     renderizarListaAgregadosEnCatalogo();
     estadoBotonFlotante = 'IDLE'; 
-    document.getElementById('icono-btn-ia').innerText = '🤖';
+    mostrarBotonIACalculando(false);
     document.getElementById('badge-ia').classList.add('oculto');
 }
 
@@ -176,7 +212,7 @@ function eliminarDispositivo(hab, indexAparato) {
     renderizarListaAgregadosEnCatalogo();
     
     estadoBotonFlotante = 'IDLE'; 
-    document.getElementById('icono-btn-ia').innerText = '🤖';
+    mostrarBotonIACalculando(false);
     document.getElementById('badge-ia').classList.add('oculto');
 }
 
@@ -190,12 +226,12 @@ function renderizarListaAgregadosEnCatalogo() {
             contadorTotal++;
             lista.innerHTML += `
                 <div class="item-lista-agregado">
-                    <span><strong>${ap.nombre}</strong> <span style="color:#aaa;">📍 ${hab}</span></span>
-                    <button class="btn-eliminar-small" onclick="eliminarDispositivo('${hab}', ${index})">✖</button>
+                    <span><strong>${ap.nombre}</strong> <span class="ubicacion">${hab}</span></span>
+                    <button class="btn-eliminar-small" onclick="eliminarDispositivo('${hab}', ${index})" aria-label="Eliminar">×</button>
                 </div>`;
         });
     }
-    if(contadorTotal === 0) lista.innerHTML = `<span style="color:#aaa; font-size:12px; font-style:italic;">Aún no has agregado dispositivos.</span>`;
+    if(contadorTotal === 0) lista.innerHTML = `<span class="vacio">Aún no has agregado dispositivos.</span>`;
 }
 
 
@@ -221,7 +257,7 @@ function cerrarChatIA() { document.getElementById('panel-chat-ia').classList.add
 
 async function ejecutarMotorTotal() {
     estadoBotonFlotante = 'CALCULANDO';
-    document.getElementById('icono-btn-ia').innerText = '⏳';
+    mostrarBotonIACalculando(true);
     document.getElementById('badge-ia').classList.add('oculto');
     cerrarChatIA();
 
@@ -234,16 +270,16 @@ async function ejecutarMotorTotal() {
         
         let htmlVampiros = "";
         if (datos.ranking_vampiros.length > 0) {
-            htmlVampiros = `<hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;"><h4 style="color:#ff4d4d; margin:0 0 10px 0;">Fugas en Reposo Detectadas:</h4>`;
+            htmlVampiros = `<h4 class="titulo-fugas">Fugas en reposo detectadas</h4>`;
             datos.ranking_vampiros.forEach(v => {
-                htmlVampiros += `<div class="vampiro-item"><strong>${v.dispositivo}</strong> - ${v.watts_fantasma}W desperdiciados</div>`;
+                htmlVampiros += `<div class="vampiro-item"><strong>${v.dispositivo}</strong> - ${v.watts_fantasma} W desperdiciados</div>`;
             });
         }
         document.getElementById('resumen-fugas').innerHTML = htmlVampiros;
 
         document.getElementById('panel-vista').style.animation = "none";
         void document.getElementById('panel-vista').offsetWidth; 
-        document.getElementById('panel-vista').style.animation = "cicloDiaNoche 60s ease-in-out forwards";
+        document.getElementById('panel-vista').style.animation = `cicloDiaNoche ${DURACION_SIMULACION_MS / 1000}s ease-in-out forwards`;
         animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop);
 
         document.getElementById('mensaje-ia-texto').innerText = "Gemma 4 está analizando tus datos...";
@@ -252,28 +288,47 @@ async function ejecutarMotorTotal() {
         document.getElementById('mensaje-ia-texto').innerText = datosIA.mensaje_ia;
         
         estadoBotonFlotante = 'LISTO';
-        document.getElementById('icono-btn-ia').innerText = '🤖';
+        mostrarBotonIACalculando(false);
         document.getElementById('badge-ia').classList.remove('oculto'); 
     } catch (error) { 
         alert(error.message);
-        estadoBotonFlotante = 'IDLE'; document.getElementById('icono-btn-ia').innerText = '🤖';
+        estadoBotonFlotante = 'IDLE'; mostrarBotonIACalculando(false);
     }
+}
+
+// Mueve el sol (06:00 a 18:00) y la luna (18:00 a 06:00) por el arco del reloj.
+// Cada astro tarda 12 horas simuladas en cruzar el cielo de izquierda a derecha.
+function actualizarCielo(minutosSimulados) {
+    const horas = minutosSimulados / 60;
+    const esDia = horas >= 6 && horas < 18;
+
+    // fraccion: 0 = el astro sale por la izquierda, 0.5 = punto más alto, 1 = se oculta por la derecha
+    const fraccion = ((horas - 6 + 24) % 12) / 12;
+    const x = (1 - Math.cos(Math.PI * fraccion)) / 2;   // avance horizontal (0 a 1)
+    const y = Math.sin(Math.PI * fraccion);             // altura (0 a 1): forma el arco
+
+    const reloj = document.getElementById('reloj-simulacion');
+    reloj.style.setProperty('--x', x.toFixed(3));       // el CSS usa estas variables para colocar el astro
+    reloj.style.setProperty('--y', y.toFixed(3));
+    reloj.classList.toggle('es-dia', esDia);
 }
 
 function animarContadoresTiempoReal(kwhFinal, copFinal) {
     const reloj = document.getElementById('reloj-simulacion');
+    const horaDigital = document.getElementById('hora-digital');
     const contadores = document.getElementById('contadores-tiempo-real');
     reloj.style.display = 'block'; contadores.style.display = 'flex';
-    
+
     const txtKwh = document.getElementById('live-kwh');
     const txtCop = document.getElementById('live-cop');
-    
-    const duracion = 60000; const inicio = performance.now();
+
+    const inicio = performance.now();
     function actualizar(tiempo) {
-        let progreso = (tiempo - inicio) / duracion;
+        let progreso = (tiempo - inicio) / DURACION_SIMULACION_MS;
         if (progreso > 1) progreso = 1;
         let minSim = Math.floor(progreso * 1440);
-        reloj.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
+        horaDigital.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
+        actualizarCielo(minSim);
         txtKwh.innerText = `${(progreso * kwhFinal).toFixed(2)} kWh`;
         txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
         if (progreso < 1) requestAnimationFrame(actualizar);
