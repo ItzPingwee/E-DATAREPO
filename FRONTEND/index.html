@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark">
-    <title>E-DATA Visual Simulator</title>
-    <!-- Icono de la pestaña: una hoja verde sobre fondo oscuro (evita además el error 404 de favicon) -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23050d0a'/%3E%3Cpath d='M16 6c5 3.5 7 8 4.5 13S12 25 11 25c-1-6 0-14 5-19z' fill='%2386d36c'/%3E%3C/svg%3E">
+    <title>E-DATA · Cada watt cuenta</title>
+    <meta name="description" content="E-DATA: energía en datos, cada watt cuenta. Simula el consumo de tu casa y encuentra los dispositivos vampiro.">
+    <!-- Icono de la pestaña: el monograma E + hoja del logo (recortado de logo.png) -->
+    <link rel="icon" type="image/png" href="favicon.png">
 
     <!-- Tipografías: Instrument Serif (títulos) y Hanken Grotesk (interfaz y números) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +19,15 @@
 <body>
 
     <div id="panel-vista">
-        <h1 class="titulo-vista">Smart home</h1>
+        <!-- Logotipo: letras en Instrument Serif (la misma fuente de los títulos) y la hoja como guion. aria-label para lectores de pantalla -->
+        <h1 class="titulo-vista" aria-label="E-DATA, energía en datos">
+            <span class="logo-letras" aria-hidden="true">E</span>
+            <svg class="logo-hoja" viewBox="0 0 60 26" aria-hidden="true">
+                <path class="hoja-cuerpo" d="M2 15C13 3 37 0 58 5 49 20 23 26 2 15z"/>
+                <path class="hoja-nervio" d="M7 15C21 9 37 7 50 8"/>
+            </svg>
+            <span class="logo-letras" aria-hidden="true">DATA</span>
+        </h1>
 
         <!-- Dock de navegación: los tres pasos de la simulación, en orden -->
         <nav class="dock vidrio" aria-label="Pasos de la simulación">
@@ -31,8 +40,8 @@
                 <span>Agregar dispositivos</span>
             </button>
             <button class="dock-btn" onclick="toggleOverlay('overlay-habitaciones')">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Ver mi casa</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>
+                <span>Mis dispositivos</span>
             </button>
         </nav>
 
@@ -45,9 +54,30 @@
             <div id="hora-digital">00:00</div>
         </div>
 
+        <!-- Casa isométrica: casa2d.js la dibuja dentro de #casa-mundo -->
         <div class="escena">
-            <img id="imagen-casa-render" src="casa_edata-Photoroom.png" alt="Render de la casa en 3D">
+            <!-- La ventana de la casa: define sus límites en pantalla. Dentro, #casa-iso recibe el mouse (arrastrar, rueda, clic) -->
+            <div class="ventana-casa">
+                <div id="casa-iso" role="img" aria-label="Casa en vista isométrica">
+                    <div id="casa-mundo"></div>
+                </div>
+
+                <div class="controles-vista vidrio" role="group" aria-label="Controles de la vista">
+                    <button type="button" id="btn-alejar" aria-label="Alejar" title="Alejar (tecla −)">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+                    </button>
+                    <button type="button" id="nivel-zoom" aria-live="polite" title="Ver toda la casa (tecla 0)">100%</button>
+                    <button type="button" id="btn-acercar" aria-label="Acercar" title="Acercar (tecla +)">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+                    </button>
+                </div>
+
+                <p class="ayuda-movimiento">Clic: caminar · Arrastra: mover la vista · Rueda o + / −: zoom</p>
+            </div>
         </div>
+
+        <!-- Ficha que aparece al pasar el mouse sobre un dispositivo de la casa -->
+        <div id="ficha-dispositivo" class="vidrio oculto" role="tooltip"></div>
 
         <div id="contadores-tiempo-real" class="vidrio">
             <div class="caja-contador">
@@ -73,10 +103,12 @@
             </div>
         </div>
 
-        <!-- Botón de la IA: muestra un destello en reposo y un anillo girando mientras calcula -->
-        <button id="btn-chat-ia" aria-label="Analizar con IA" onclick="manejarClickBotonFlotante()">
+        <!-- Botón principal: simula el día y después abre el análisis de la IA. Su texto e ícono cambian con el estado (ponerEstadoBotonIA en app.js) -->
+        <button id="btn-chat-ia" onclick="manejarClickBotonFlotante()">
+            <svg class="icono-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
             <svg class="icono-destello" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.7 5.2 2.8 7.3 8 8-5.2.7-7.3 2.8-8 8-.7-5.2-2.8-7.3-8-8 5.2-.7 7.3-2.8 8-8z"/><path d="M19 15.5c.3 2 1.1 2.8 3 3-1.9.2-2.7 1-3 3-.3-2-1.1-2.8-3-3 1.9-.2 2.7-1 3-3z"/></svg>
             <svg class="icono-calculando" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"/></svg>
+            <span id="txt-btn-ia">Simular día</span>
             <div id="badge-ia" class="oculto"></div>
         </button>
 
@@ -138,6 +170,9 @@
                     <div class="config-dispositivo">
                         <h3 id="txt-nombre-seleccion">Selecciona un dispositivo</h3>
 
+                        <!-- Foto, marcas, consumos y fuente del dispositivo elegido (lo llena app.js) -->
+                        <div id="vista-seleccion"></div>
+
                         <div>
                             <label class="etiqueta" for="select-habitacion">Habitación de destino</label>
                             <select id="select-habitacion">
@@ -151,6 +186,7 @@
                             <div id="div-minutos" class="campo-formulario">
                                 <label class="etiqueta" for="input-minutos">Minutos de uso al día</label>
                                 <input type="number" id="input-minutos" value="30" min="1" max="1440">
+                                <small id="txt-uso-tipico" class="nota-uso"></small>
                             </div>
 
                             <div id="div-conexion" class="fila-check">
@@ -177,10 +213,10 @@
             </div>
         </div>
 
-        <!-- OVERLAY 3: VER HABITACIONES -->
+        <!-- OVERLAY 3: DISPOSITIVOS POR HABITACIÓN (la casa ya se ve siempre; aquí se revisa el estado de cada aparato) -->
         <div id="overlay-habitaciones" class="overlay-panel oculto">
             <div class="header-overlay">
-                <h2>Plano de tu casa</h2>
+                <h2>Dispositivos por habitación</h2>
                 <button class="btn-cerrar" aria-label="Cerrar" onclick="toggleOverlay('overlay-habitaciones')">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
                 </button>
