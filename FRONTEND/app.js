@@ -4,10 +4,18 @@
 // ----------------------------------------------------
 function toggleOverlay(id) { document.getElementById(id).classList.toggle('oculto'); }
 
-// El botón de IA muestra un destello en reposo y un anillo girando mientras calcula.
-// El cambio visual lo hace el CSS a partir de la clase 'calculando'.
-function mostrarBotonIACalculando(calculando) {
-    document.getElementById('btn-chat-ia').classList.toggle('calculando', calculando);
+// El botón principal tiene tres estados y esta función es el único sitio que los cambia:
+//  IDLE = listo para simular · CALCULANDO = simulando y esperando a la IA · LISTO = el análisis ya se puede abrir
+// El texto lo escribe JS; el ícono lo elige el CSS según la clase ('calculando' o 'listo').
+const TEXTO_BOTON_IA = { IDLE: 'Simular día', CALCULANDO: 'Calculando…', LISTO: 'Ver análisis' };
+
+function ponerEstadoBotonIA(estado) {
+    estadoBotonFlotante = estado;
+    const boton = document.getElementById('btn-chat-ia');
+    boton.classList.toggle('calculando', estado === 'CALCULANDO');
+    boton.classList.toggle('listo', estado === 'LISTO');
+    document.getElementById('txt-btn-ia').textContent = TEXTO_BOTON_IA[estado];
+    document.getElementById('badge-ia').classList.toggle('oculto', estado !== 'LISTO');   // el punto ámbar avisa que hay análisis nuevo
 }
 
 
@@ -30,6 +38,11 @@ function agregarHabitacion() {
     const nombre = input.value.trim();
     if(nombre === "") return;
     
+    if (habitacionesCreadas.length >= MAX_HABITACIONES) {
+        alert(`Tu casa puede tener hasta ${MAX_HABITACIONES} habitaciones para que se siga viendo completa.`);
+        return;
+    }
+
     if(!habitacionesCreadas.includes(nombre)) {
         habitacionesCreadas.push(nombre);
         casaUsuario[nombre] = [];
@@ -45,9 +58,7 @@ function eliminarHabitacion(nombre) {
     delete casaUsuario[nombre]; 
     actualizarTodoElUI();
     
-    estadoBotonFlotante = 'IDLE'; 
-    mostrarBotonIACalculando(false);
-    document.getElementById('badge-ia').classList.add('oculto');
+    ponerEstadoBotonIA('IDLE');
 }
 
 function actualizarTodoElUI() {
@@ -82,23 +93,37 @@ function actualizarTodoElUI() {
     renderizarListaAgregadosEnCatalogo();
 }
 
+// HTML de la foto de un dispositivo. Si no tiene foto (o el archivo no carga) se muestra su emoji.
+// encodeURI convierte espacios y letras como la ñ en una ruta válida para el navegador.
+function htmlImagenDispositivo(item) {
+    if (!item.imagen) return `<div class="img-placeholder">${item.icono}</div>`;
+    const ruta = encodeURI(CARPETA_IMAGENES + item.imagen);
+    return `<img src="${ruta}" class="img-dispositivo" alt="${item.nombre}" loading="lazy" data-icono="${item.icono}" onerror="reemplazarPorEmoji(this)">`;
+}
+
+// Se ejecuta si una foto no carga: cambia la <img> rota por el emoji del dispositivo
+function reemplazarPorEmoji(img) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'img-placeholder';
+    placeholder.textContent = img.dataset.icono;
+    img.replaceWith(placeholder);
+}
+
 function filtrarCatalogo() {
-    const texto = document.getElementById('input-buscador').value.toLowerCase();
+    // normalizarTexto quita tildes y mayúsculas: buscar "bano" o "cafe" encuentra "Baño" y "Café"
+    const texto = normalizarTexto(document.getElementById('input-buscador').value);
     const zonaSelec = document.getElementById('filtro-zona').value;
-    
+
     const grid = document.getElementById('grid-catalogo');
     grid.innerHTML = '';
-    
+
     catalogoExcel.forEach((item) => {
-        const matchTexto = item.nombre.toLowerCase().includes(texto) || item.marcas.toLowerCase().includes(texto);
+        const matchTexto = normalizarTexto(item.nombre).includes(texto) || normalizarTexto(item.marcas).includes(texto);
         const matchZona = (zonaSelec === "Todas" || item.zona === zonaSelec);
-        
+
         if (matchTexto && matchZona) {
             const claseSeleccion = item.id === indexSeleccionado ? 'carta-seleccionada' : '';
-            
-            const imagenVisual = item.url_imagen 
-                ? `<img src="${item.url_imagen}" class="img-dispositivo" alt="${item.nombre}">` 
-                : `<div class="img-placeholder">${item.icono}</div>`;
+            const imagenVisual = htmlImagenDispositivo(item);
 
             grid.innerHTML += `
                 <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${item.id})">
@@ -126,7 +151,36 @@ function seleccionarDispositivo(id) {
     // Al elegir un dispositivo, la habitación de destino se ajusta a su zona (una nevera -> Cocina)
     const aparato = catalogoExcel.find(item => item.id === id);
     sincronizarHabitacionConZona(aparato.zona);
+
+    // El formulario propone el uso típico del aparato. Se carga aquí (y no en actualizarFormularioUI)
+    // porque esa función corre también al buscar o filtrar y borraría los minutos que el usuario escribió.
+    if (aparato.minutos_tipicos) {
+        document.getElementById('input-minutos').value = aparato.minutos_tipicos;
+    }
     filtrarCatalogo();
+}
+
+// Convierte minutos a texto legible: 20 -> "20 min", 240 -> "4 h", 90 -> "1 h 30 min"
+function formatearMinutos(minutos) {
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    if (horas === 0) return `${resto} min`;
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
+}
+
+// Panel derecho: foto grande, marcas, consumos y, si existe, la fuente del dato
+function dibujarVistaSeleccion(aparato) {
+    const fuente = aparato.fuente
+        ? `<p class="fuente-dato">Fuente: <a href="${aparato.fuente}" target="_blank" rel="noopener noreferrer">consultar</a>${aparato.nota_fuente ? ' · ' + aparato.nota_fuente : ''}</p>`
+        : '';
+    document.getElementById('vista-seleccion').innerHTML = `
+        ${htmlImagenDispositivo(aparato)}
+        <p class="marcas-seleccion"><strong>Marcas:</strong> ${aparato.marcas}</p>
+        <p class="consumos-seleccion">
+            <span class="potencia-info">Uso: ~${aparato.watts_activos} W</span>
+            <span class="standby-info">Standby: ~${aparato.watts_standby} W</span>
+        </p>
+        ${fuente}`;
 }
 
 // Quita tildes y mayúsculas para poder comparar textos ("Habitación" == "habitacion")
@@ -158,6 +212,10 @@ function actualizarFormularioUI() {
     if (!aparato) return;
 
     document.getElementById('txt-nombre-seleccion').innerText = `Configurando: ${aparato.nombre}`;
+    dibujarVistaSeleccion(aparato);
+    document.getElementById('txt-uso-tipico').textContent = aparato.minutos_tipicos
+        ? `Uso típico estimado: ${formatearMinutos(aparato.minutos_tipicos)} al día`
+        : '';
     const divMin = document.getElementById('div-minutos');
     const divCon = document.getElementById('div-conexion');
     const txtInfo = document.getElementById('txt-info-fija');
@@ -195,15 +253,14 @@ function instalarDispositivo() {
     } else { hrs = 24; conectado = true; }
 
     casaUsuario[hab].push({
-        nombre: aparato.nombre, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
+        id: aparato.id,   // con el id, la casa sabe qué dibujo usar (el backend ignora este campo)
+        nombre: aparato.nombre, icono: aparato.icono, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
         horas_uso: hrs, dejado_conectado: conectado, desconectable: document.getElementById('check-desconectable').checked
     });
 
     renderizarCasa();
     renderizarListaAgregadosEnCatalogo();
-    estadoBotonFlotante = 'IDLE'; 
-    mostrarBotonIACalculando(false);
-    document.getElementById('badge-ia').classList.add('oculto');
+    ponerEstadoBotonIA('IDLE');
 }
 
 function eliminarDispositivo(hab, indexAparato) {
@@ -211,9 +268,7 @@ function eliminarDispositivo(hab, indexAparato) {
     renderizarCasa();
     renderizarListaAgregadosEnCatalogo();
     
-    estadoBotonFlotante = 'IDLE'; 
-    mostrarBotonIACalculando(false);
-    document.getElementById('badge-ia').classList.add('oculto');
+    ponerEstadoBotonIA('IDLE');
 }
 
 function renderizarListaAgregadosEnCatalogo() {
@@ -256,9 +311,7 @@ function abrirChatIA() {
 function cerrarChatIA() { document.getElementById('panel-chat-ia').classList.add('oculto'); }
 
 async function ejecutarMotorTotal() {
-    estadoBotonFlotante = 'CALCULANDO';
-    mostrarBotonIACalculando(true);
-    document.getElementById('badge-ia').classList.add('oculto');
+    ponerEstadoBotonIA('CALCULANDO');
     cerrarChatIA();
 
     const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
@@ -287,12 +340,10 @@ async function ejecutarMotorTotal() {
         const datosIA = await resIA.json();
         document.getElementById('mensaje-ia-texto').innerText = datosIA.mensaje_ia;
         
-        estadoBotonFlotante = 'LISTO';
-        mostrarBotonIACalculando(false);
-        document.getElementById('badge-ia').classList.remove('oculto'); 
+        ponerEstadoBotonIA('LISTO');
     } catch (error) { 
         alert(error.message);
-        estadoBotonFlotante = 'IDLE'; mostrarBotonIACalculando(false);
+        ponerEstadoBotonIA('IDLE');
     }
 }
 

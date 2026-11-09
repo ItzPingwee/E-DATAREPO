@@ -8,6 +8,12 @@
    1. TOKENS: todos los colores, radios y espacios viven aquí
    -------------------------------------------------------------------------- */
 :root {
+    /* Alto de la ventana de la casa: lo usan ella y el logo (que se centra en el espacio sobre la ventana) */
+    --alto-ventana: clamp(420px, 60vh, 640px);
+    /* Ancho de la ventana de la casa (más ancha en pantallas grandes, sin pisar el dock) y ancho del dock: el dock se pega a su borde */
+    --ancho-escena: clamp(480px, calc(100vw - 560px), 940px);
+    --ancho-dock: 232px;
+
     /* Fondos */
     --abismo: #050d0a;
     --bosque: #0a1a13;
@@ -141,7 +147,10 @@ button { font-family: inherit; }
 
 .titulo-vista {
     position: absolute;
-    top: var(--espacio-5);
+    /* La ventana está centrada, así que su borde de arriba queda en (50% − alto/2). El logo va justo en la mitad
+       entre el tope de la página y ese borde (translateY(-50%) lo centra sobre ese punto). */
+    top: calc((50% - var(--alto-ventana) / 2) / 2);
+    transform: translateY(-50%);
     left: 0;
     width: 100%;
     margin: 0;
@@ -155,14 +164,24 @@ button { font-family: inherit; }
     opacity: 0.92;
     pointer-events: none;
     z-index: 3;
+    /* Logotipo en una fila: E, hoja y DATA, alineados por el centro de las mayúsculas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.1em;
 }
+.logo-letras { display: block; line-height: 1; }
+/* La hoja hace de guion: más baja que el centro de las letras, como en el logo */
+.logo-hoja { width: 0.42em; height: auto; margin-top: 0.1em; overflow: visible; }
+.hoja-cuerpo { fill: #86d36c; }
+.hoja-nervio { fill: none; stroke: #050d0a; stroke-width: 2.2; stroke-linecap: round; }
 
 /* La casa tiene un halo esmeralda detrás para que flote sobre el fondo */
 .escena {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 780px;
+    max-width: var(--ancho-escena);
     display: flex;
     justify-content: center;
 }
@@ -177,13 +196,176 @@ button { font-family: inherit; }
     background: radial-gradient(closest-side, rgba(28, 154, 104, 0.55) 0%, rgba(12, 74, 52, 0.28) 55%, transparent 100%);
     filter: blur(30px);
 }
-#imagen-casa-render {
+
+/* Ventana de la casa: vidrio oscuro con borde de luz. Es más oscura que el fondo para que la casa "viva" dentro,
+   y translúcida para que el ciclo de día y noche se asome detrás. Los puntos del fondo se mueven con la vista (JS les da --pan-x / --pan-y). */
+.ventana-casa {
     position: relative;
     width: 100%;
-    max-height: 58vh;
-    object-fit: contain;
-    filter: drop-shadow(0 44px 50px rgba(0, 0, 0, 0.55));
+    height: var(--alto-ventana);         /* deja sitio al logo de arriba y a los contadores que salen abajo al simular */
+    overflow: hidden;
+    overflow: clip;                      /* como hidden, pero ni el teclado (Tab) ni el código pueden desplazar el contenido */
+    border-radius: var(--radio-hoja);
+    border: 1px solid var(--vidrio-borde);
+    background:
+        radial-gradient(rgba(204, 255, 226, 0.07) 1px, transparent 1.5px) var(--pan-x, 0px) var(--pan-y, 0px) / 30px 30px,
+        radial-gradient(90% 70% at 50% 28%, rgba(40, 120, 88, 0.22) 0%, transparent 70%),
+        linear-gradient(160deg, rgba(10, 30, 22, 0.60), rgba(3, 9, 7, 0.86));
+    box-shadow: var(--vidrio-brillo), inset 0 0 80px rgba(0, 0, 0, 0.55), var(--sombra-flotante);
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
 }
+
+/* Zona que recibe el mouse: arrastrar para mover la vista, rueda para el zoom y clic para caminar */
+#casa-iso {
+    position: absolute;
+    inset: 0;
+    cursor: grab;
+    touch-action: none;
+}
+#casa-iso.arrastrando { cursor: grabbing; }
+#casa-mundo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    --escala: 1;
+    filter: drop-shadow(0 26px 24px rgba(0, 0, 0, 0.45));
+}
+.sprite-casa {
+    position: absolute;
+    max-width: none;               /* el ancho lo calcula JS para cada imagen */
+    pointer-events: none;          /* los clics atraviesan los dibujos y llegan al suelo */
+    user-select: none;
+}
+.grosor-piso {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+/* Pared entre dos habitaciones: la misma pieza que las paredes exteriores, pero casi transparente
+   para separar los espacios sin esconder lo que hay detrás */
+.pared-interior { opacity: 0.28; }
+.casa-vacia {
+    position: absolute;
+    width: 260px;
+    margin: 0;
+    color: var(--texto-suave);
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Cartel con el nombre de la habitación. Se divide entre la escala para mantener un tamaño legible */
+.etiqueta-habitacion {
+    position: absolute;
+    z-index: 9000;                 /* encima de muebles y paredes: con la casa llena, un mueble o la ducha del cuarto de adelante lo taparían */
+    transform: translate(-50%, -50%);
+    padding: calc(3px / var(--escala)) calc(11px / var(--escala));
+    border-radius: var(--radio-pildora);
+    font-size: calc(12px / var(--escala));
+    font-weight: 500;
+    color: var(--texto);
+    background: var(--vidrio-oscuro);       /* fondo oscuro: se lee sobre cerámica clara y sobre madera */
+    white-space: nowrap;
+    pointer-events: auto;                   /* al hacer clic, la vista se acerca a esa habitación */
+    cursor: zoom-in;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.etiqueta-habitacion:hover { color: var(--musgo); }
+
+/* Dispositivo instalado: disco de vidrio con su emoji. El anillo indica si gasta en reposo */
+.pin-dispositivo {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%, -62%);
+    border-radius: 50%;
+    font-size: 24px;
+    background: var(--vidrio-oscuro);
+    border: 2px solid var(--niebla);
+    box-shadow: 0 10px 14px -4px rgba(0, 0, 0, 0.6);
+    cursor: help;
+    transition: transform 0.18s ease;
+}
+.pin-dispositivo.en-reposo { border-color: var(--ambar); box-shadow: 0 0 18px rgba(233, 173, 82, 0.55), 0 10px 14px -4px rgba(0, 0, 0, 0.6); }
+.pin-dispositivo:hover { transform: translate(-50%, -62%) scale(1.15); }
+
+/* Dispositivo dibujado con su sprite (en vez del disco): el brillo hace de anillo de estado.
+   El mouse lo recibe la .zona-dispositivo (ver hacerDispositivoInteractivo); los clics siguen llegando al suelo para caminar. */
+.zona-dispositivo { position: absolute; cursor: help; }
+.sprite-casa.dispositivo-sprite { transition: filter 0.2s ease; }
+.sprite-casa.dispositivo-sprite.en-reposo { filter: drop-shadow(0 0 3px rgba(233, 173, 82, 0.95)) drop-shadow(0 0 9px rgba(233, 173, 82, 0.55)); }
+.sprite-casa.dispositivo-sprite.desconectado { filter: drop-shadow(0 0 3px rgba(150, 205, 230, 0.85)); }
+.sprite-casa.dispositivo-sprite.en-reposo.resaltado { filter: brightness(1.12) drop-shadow(0 0 4px rgba(233, 173, 82, 1)) drop-shadow(0 0 12px rgba(233, 173, 82, 0.7)); }
+.sprite-casa.dispositivo-sprite.desconectado.resaltado { filter: brightness(1.12) drop-shadow(0 0 5px rgba(150, 205, 230, 1)); }
+
+/* Ficha que aparece al pasar el mouse por un dispositivo */
+#ficha-dispositivo {
+    position: fixed;
+    z-index: 60;
+    max-width: 290px;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-tarjeta);
+    background: var(--vidrio-oscuro);
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-1);
+    pointer-events: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--texto-suave);
+}
+#ficha-dispositivo strong { font-size: 1.05rem; font-weight: 600; color: var(--texto); }
+#ficha-dispositivo .ficha-lugar { margin-bottom: var(--espacio-1); color: var(--musgo); }
+
+.ayuda-movimiento {
+    position: absolute;
+    left: var(--espacio-5);
+    bottom: var(--espacio-4);
+    max-width: calc(100% - 300px);       /* deja sitio a los controles de la derecha */
+    margin: 0;
+    padding: var(--espacio-2) var(--espacio-4);
+    border-radius: var(--radio-pildora);
+    background: var(--vidrio-oscuro);    /* con fondo, se lee aunque la casa pase por debajo */
+    font-size: 0.76rem;
+    line-height: 1.4;
+    color: var(--texto-suave);
+    pointer-events: none;
+}
+
+/* Controles de la vista: acercar, alejar, centrar en el avatar y ver toda la casa */
+.controles-vista {
+    position: absolute;
+    right: var(--espacio-4);
+    bottom: var(--espacio-4);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radio-pildora);
+}
+.controles-vista button {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto-suave);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.controles-vista button:hover { color: var(--texto); background: rgba(134, 211, 108, 0.12); border-color: rgba(134, 211, 108, 0.25); }
+.controles-vista svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* El porcentaje es un botón discreto: al hacer clic vuelve a ver toda la casa */
+.controles-vista #nivel-zoom { width: auto; min-width: 42px; padding: 0 4px; border-radius: var(--radio-pildora); font: inherit; font-size: 0.7rem; font-variant-numeric: tabular-nums; }
 
 /* --------------------------------------------------------------------------
    4. DOCK DE NAVEGACIÓN, RELOJ Y CONTADORES
@@ -191,7 +373,10 @@ button { font-family: inherit; }
 .dock {
     position: absolute;
     top: 50%;
-    left: var(--espacio-5);
+    /* Pegado al borde izquierdo de la ventana de la casa (a 16 px), para que se lean como un solo grupo en cualquier pantalla.
+       El tope (min) evita que se salga por la izquierda cuando la pantalla es estrecha. */
+    right: min(calc(50% + var(--ancho-escena) / 2 + var(--espacio-4)), calc(100% - var(--ancho-dock) - var(--espacio-4)));
+    width: var(--ancho-dock);
     transform: translateY(-50%);
     z-index: 10;
     display: flex;
@@ -329,6 +514,13 @@ button { font-family: inherit; }
     color: transparent;
 }
 
+/* En pantallas bajas los contadores se compactan para no tapar la casa */
+@media (max-height: 800px) {
+    .caja-contador { min-width: 240px; padding: var(--espacio-2) var(--espacio-6); }
+    .caja-contador .label { font-size: 0.9rem; }
+    .caja-contador .valor { font-size: 2.5rem; }
+}
+
 /* --------------------------------------------------------------------------
    5. BOTÓN FLOTANTE Y PANEL DE LA IA
    -------------------------------------------------------------------------- */
@@ -337,13 +529,16 @@ button { font-family: inherit; }
     bottom: var(--espacio-6);
     right: var(--espacio-6);
     z-index: 50;
-    width: 64px;
-    height: 64px;
+    height: 56px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
-    border-radius: 50%;
+    gap: var(--espacio-3);
+    padding: 0 var(--espacio-6) 0 var(--espacio-5);
+    border-radius: var(--radio-pildora);       /* píldora: con texto se entiende qué hace; antes era un círculo sin nombre */
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
     color: var(--texto-sobre-acento);
     background: var(--gradiente-acento);
     border: 1px solid rgba(255, 255, 255, 0.35);
@@ -352,11 +547,14 @@ button { font-family: inherit; }
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 #btn-chat-ia:hover { transform: translateY(-3px); box-shadow: var(--vidrio-brillo), 0 16px 40px -6px rgba(134, 211, 108, 0.6); }
-#btn-chat-ia svg { width: 28px; height: 28px; fill: currentColor; }
+#btn-chat-ia svg { width: 22px; height: 22px; fill: currentColor; }
 
-/* Dos íconos dentro del botón: el destello (reposo) y el anillo (calculando) */
-.icono-calculando { display: none; }
-#btn-chat-ia.calculando .icono-destello { display: none; }
+/* Tres íconos dentro del botón, uno por estado (app.js pone la clase 'calculando' o 'listo'):
+   play = listo para simular · anillo = calculando · destello = el análisis de la IA está listo */
+.icono-destello, .icono-calculando { display: none; }
+#btn-chat-ia.listo .icono-play { display: none; }
+#btn-chat-ia.listo .icono-destello { display: block; }
+#btn-chat-ia.calculando .icono-play { display: none; }
 #btn-chat-ia.calculando .icono-calculando { display: block; animation: girar 1s linear infinite; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 @keyframes girar { to { transform: rotate(360deg); } }
 
@@ -654,16 +852,27 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
 .hover-info .potencia-info { font-size: 0.85rem; font-weight: 500; color: var(--musgo); }
 .hover-info .standby-info { font-size: 0.85rem; font-weight: 500; color: var(--ambar); }
 
-/* Imagen o emoji de cada dispositivo (los sprites llegarán en la V3) */
+/* Foto real (o emoji de respaldo) de cada dispositivo. Las fotos tienen fondo blanco,
+   así que se dibujan sobre un recuadro blanco para que no se note su borde. */
 .img-placeholder, .img-dispositivo {
-    width: 68px;
-    height: 68px;
+    width: 100%;
+    height: 112px;
     margin-bottom: var(--espacio-1);
-    border-radius: 50%;
+    border-radius: 14px;
     border: 1px solid var(--vidrio-borde);
 }
-.img-placeholder { display: flex; justify-content: center; align-items: center; font-size: 1.9rem; background: radial-gradient(circle at 35% 30%, rgba(134, 211, 108, 0.22), rgba(5, 13, 10, 0.55)); }
-.img-dispositivo { object-fit: contain; padding: 8px; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(214, 235, 224, 0.75)); }
+.img-placeholder { display: flex; justify-content: center; align-items: center; font-size: 2.6rem; background: radial-gradient(circle at 35% 30%, rgba(134, 211, 108, 0.22), rgba(5, 13, 10, 0.55)); }
+.img-dispositivo { object-fit: contain; padding: 6px; background: #fff; }
+
+/* Vista del dispositivo elegido, arriba del formulario */
+#vista-seleccion { display: flex; flex-direction: column; gap: var(--espacio-2); }
+#vista-seleccion .img-placeholder, #vista-seleccion .img-dispositivo { height: 96px; margin-bottom: 0; }
+.marcas-seleccion, .consumos-seleccion, .fuente-dato { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--texto-suave); }
+.consumos-seleccion { display: flex; gap: var(--espacio-4); font-weight: 500; }
+.consumos-seleccion .potencia-info { color: var(--musgo); }
+.consumos-seleccion .standby-info { color: var(--ambar); }
+.fuente-dato a { color: var(--musgo); }
+.nota-uso { display: block; margin-top: var(--espacio-1); font-size: 0.78rem; color: var(--texto-suave); }
 
 .config-dispositivo {
     flex: 1;
@@ -757,6 +966,7 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
    11. ADAPTACIÓN A PANTALLAS PEQUEÑAS
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
+    .ayuda-movimiento { display: none; }          /* en pantallas pequeñas no hay teclado */
     .overlay-panel { padding: var(--espacio-5) var(--espacio-4); }
     .layout-catalogo-columnas { flex-direction: column; overflow-y: auto; }
     .grid-catalogo-scroll { flex: none; overflow: visible; }
@@ -765,9 +975,12 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
     .filtros-container { flex-direction: column; }
 
     /* El dock pasa a una barra horizontal bajo el título */
-    .dock { top: 88px; left: 50%; flex-direction: row; transform: translateX(-50%); }
+    .dock { top: 88px; left: 50%; right: auto; width: auto; flex-direction: row; transform: translateX(-50%); }
     .dock-btn { padding: var(--espacio-3); }
     .dock-btn span { display: none; }
+    .titulo-vista { top: var(--espacio-5); transform: none; }   /* sin espacio de sobra: el logo vuelve arriba */
+    #btn-chat-ia { width: 56px; padding: 0; }                   /* solo el ícono */
+    #txt-btn-ia { display: none; }
 
     #reloj-simulacion { --ancho-reloj: 180px; --alto-cielo: 84px; --altura-arco: 64px; --tamano-astro: 26px; top: 150px; right: 50%; transform: translateX(50%); }
     #contadores-tiempo-real { bottom: var(--espacio-4); width: calc(100% - 32px); }
