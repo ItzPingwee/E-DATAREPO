@@ -4,12 +4,15 @@ Proyecto universitario (Ing. de IA, 3er semestre). Simula el consumo de una casa
 rankea dispositivos "vampiro" en standby y un asistente de IA local da recomendaciones.
 
 ## Stack y estructura
-- **BACKEND/main.py**: FastAPI. `POST /api/simular` (kWh, costo COP, ranking de vampiros con max-heap)
-  y `POST /api/ia` (proxy a LM Studio en `localhost:1234`, modelo Gemma).
+- **BACKEND/main.py**: FastAPI. `POST /api/simular` (kWh, costo COP, `ahorro_mensual_cop`, ranking de vampiros con max-heap)
+  y `POST /api/ia` (proxy a LM Studio en `localhost:1234`, modelo Gemma). **El ahorro** es el standby diario que aportan los vampiros
+  (`kwh_standby_vampiros`, la misma cuenta que suma al consumo: solo las `24 − horas_uso` horas inactivas) × 30 días × tarifa. Antes contaba 24 h y no
+  cuadraba con el consumo. `prompt_generado` (lo que lee la IA) usa esa misma cifra.
 - **FRONTEND/**: HTML + CSS + JS vanilla, SIN frameworks ni build. Habla con `http://127.0.0.1:8000`.
-  Orden de carga en `index.html` (importa): `catalogo.js` (datos) → `casa2d.js` (dibujo) → `app.js` (lógica y backend).
+  Orden de carga en `index.html` (importa): `catalogo.js` (datos) → `casa2d.js` (dibujo) → `app.js` (lógica y backend) → `portada.js` (pantalla de entrada).
   - `index.html`: estructura. `styles.css`: todo el estilo, con variables en `:root`.
-  - `catalogo.js`: el catálogo y `CARPETA_IMAGENES`. `app.js`: estado, overlays, catálogo, simulación, reloj.
+  - `catalogo.js`: el catálogo y `CARPETA_IMAGENES`. `app.js`: estado, overlays, catálogo, simulación, reloj, panel de resultados.
+  - `portada.js`: la cortina de bienvenida (arrastre, rueda, teclado). Es lo último que carga porque solo necesita su propio HTML.
   - `casa2d.js`: la casa isométrica (suelo, paredes, muebles, avatar, pines de dispositivos, ficha al pasar el mouse).
 - **FRONTEND/assets/**: sprites pixel art. `base_casa/` (baldosas, paredes, muebles), `avatars/` (Jero en 6 poses),
   `dispositivos/` (los dibujos de los dispositivos en la casa: 16 antiguos y ~90 nuevos `<nombre>_u.png` / `<nombre>_v.png`).
@@ -28,10 +31,28 @@ rankea dispositivos "vampiro" en standby y un asistente de IA local da recomenda
   ponerlo arriba (choca con el logo y el reloj) o abajo (choca con los contadores). Pasos en orden: **Modelar casa → Agregar dispositivos →
   Mis dispositivos** (esta última es el inventario por habitación con su estado; la casa ya se ve siempre, por eso no se llama "ver mi casa").
   Abajo a la derecha, un botón en píldora con **texto**: "Simular día" → "Calculando…" → "Ver análisis" (`ponerEstadoBotonIA`, único sitio que cambia el
-  estado). Ese botón simula Y llama a la IA; es la acción principal, no un adorno. Los contadores de la simulación se compactan con `max-height: 800px`
-  para no tapar la casa. Para probar con la IA sin llamarla, muestra reloj y contadores a mano en una página temporal.
-- **FRONTEND/Imagenes electrodomesticos/**: fotos reales de los dispositivos, solo para el catálogo.
-  `casa_edata-Photoroom.png` ya no se usa.
+  estado). Ese botón simula Y llama a la IA **a propósito**: decisión del usuario para ahorrar tiempo, porque la IA es lenta. No los separes sin que lo
+  pida. Los contadores de la simulación se compactan con `max-height: 800px` para no tapar la casa. Para probar sin llamar a la IA, muestra reloj y
+  contadores a mano en una página temporal.
+- **Portada (`#portada`, `portada.js`):** cortina `position: fixed`, `z-index: 100` (sobre los overlays, que van a 60), con el mismo fondo que la app (los
+  resplandores y el grano se comparten con `#panel-vista` en el CSS), el logo grande al centro y tres flechas hacia abajo. **Lo memorable es la hoja del
+  logo:** respira como el LED de standby de un aparato (el tema del proyecto) y al arrastrar se enciende. `portada.js` pone `--progreso` (0 a 1) en `#portada`
+  y el CSS lo usa para el brillo, las flechas y el texto; llega a 1 justo a la distancia que basta para entrar (`FRACCION_PARA_ENTRAR`, 30 % del alto), así
+  el brillo máximo avisa "suelta ya". Entra con arrastre hacia arriba (menos de esa distancia rebota), rueda hacia abajo, clic en las flechas, o Enter,
+  Espacio y ↑. Al entrar recibe `inert` y `visibility: hidden` (con `MS_SUBIDA` = su transición de 0.6 s) y `controlesBloqueados()` (casa2d.js) mira la clase
+  `visible` para que el avatar no se mueva detrás. **El clic en las flechas lo resuelve `pointerup`**, no `click`: la portada captura el puntero para seguir
+  el arrastre y por eso el `click` ya no llega al botón con el mouse (con el teclado sí).
+- **Panel de resultados (`#overlay-resultados`, `dibujarPanelResultados` en app.js):** aparece como un botón (`#btn-resultados`, apilado sobre el principal)
+  **al terminar los 2 minutos** del día simulado; no espera a la IA y **no la incluye**. `animarContadoresTiempoReal` recibe un callback que se llama al
+  llegar a `progreso = 1`; `numeroSimulacion` descarta la animación de una simulación anterior si la casa cambió o se lanzó otra, y
+  `ponerEstadoBotonIA('IDLE')` esconde el botón. Jerarquía visual (decisión de diseño, no la cambies a "cuatro tarjetas iguales"): 1) el **ahorro al mes** grande
+  en Instrument Serif, con el año al lado (`ahorro_mensual × 12`); 2) una fila discreta con consumo del día, costo del día y costo al mes (×30); 3) el
+  ranking de vampiros como lista **numerada** (aquí el orden sí es información), con barra ámbar relativa al mayor. Sin vampiros, las cifras se apagan y el
+  mensaje explica por qué. El chat de la IA quedó solo con el texto del análisis (ya no repite la lista de fugas) y sube a `bottom: 172px` para dejar sitio al botón.
+- **Formato de números:** kWh con **coma** (`formatearKwh`, `es-CO`) y pesos con **punto** (`formatearPesos`), para que "1,48 kWh" y "$1.296" no se confundan.
+  Los vatios (catálogo, ficha, ranking) siguen con punto: son números pequeños y se dejaron como estaban.
+- **FRONTEND/Imagenes electrodomesticos/**: fotos reales de los dispositivos, solo para el catálogo. El nombre debe coincidir **exacto** con el campo
+  `imagen` del catálogo, mayúsculas incluidas (las bombillas son `.PNG`): Windows no distingue mayúsculas, pero Linux, macOS y GitHub Pages sí.
 
 ## Catálogo (`catalogo.js`)
 - 86 dispositivos en `catalogoExcel`. Campos: `id` (consecutivo desde 0), `zona`, `nombre`, `marcas`, `watts_activos`,
@@ -104,12 +125,13 @@ rankea dispositivos "vampiro" en standby y un asistente de IA local da recomenda
 - El backend ignora campos extra como `icono` e `id` (verificado con `/api/simular`).
 
 ## Hoja de ruta
-- V1 archivos separados ✔ · V2 sistema de diseño ✔ · V3 catálogo con fotos ✔ y **panel de resultados pendiente**
-  (resumen kWh/costo y ranking de vampiros con barras y habitación, usando solo lo que devuelve el backend:
-  `consumo_total_kwh`, `costo_simulado_cop`, `ranking_vampiros`).
-- V4 casa isométrica con avatar (en curso): faltan muebles (sofá, cama, ducha, lavamanos, escritorio de habitación).
+- V1 archivos separados ✔ · V2 sistema de diseño ✔ · V3 catálogo con fotos ✔ y panel de resultados ✔
+  (ahorro al mes y al año, datos del día y ranking de vampiros; usa lo que devuelve `/api/simular`, sin la IA).
+- V4 casa isométrica con avatar ✔ (muebles, paredes de dos pisos, ventana con zoom y arrastre, logo y nueva distribución de pantalla).
 - V5 pulido: sprites de dispositivos en la casa ✔ (79 de 86); faltan los de zona de ropa (mesa para lo de superficie), dibujos para los 7 que no
   tienen, y detalles del avatar.
+- V6 portada de entrada ✔ (cortina con la hoja que se enciende al arrastrar). Mejoras posibles del panel que se dejaron fuera porque piden más campos del
+  backend: porcentaje del consumo que es standby y si se respetó el presupuesto (el backend ya lo evalúa para la IA, pero no lo devuelve).
 
 ## Reglas de trabajo
 - **Responde en español, tono didáctico**: explica brevemente el *porqué* de cada decisión (el usuario es estudiante y quiere aprender).
@@ -118,8 +140,16 @@ rankea dispositivos "vampiro" en standby y un asistente de IA local da recomenda
   sin que lo pida. Para probar el front usa solo `/api/simular` (no depende de IA) o datos de ejemplo.
 - Pruebas visuales: servir el frontend con `python -m http.server 5500 --directory FRONTEND` y el backend con
   `python -m uvicorn main:app --port 8000` desde `BACKEND/`. Pregunta antes de dejar servidores corriendo.
+  **El usuario corre uvicorn en su terminal de VS Code, sin `--reload`:** si cambias `main.py` hay que reiniciarlo, o seguirá con el código viejo
+  (ya pasó: un servidor viejo no devolvía `ahorro_mensual_cop` y el ahorro habría salido en `$0`). Si el puerto 8000 está ocupado, es suyo: no lo cierres sin preguntar; para probar usa otro puerto (8001).
+  Para ver el panel de resultados sin esperar 2 minutos ni llamar a la IA: en la consola `dibujarPanelResultados({consumo_total_kwh: 1.48,
+  costo_simulado_cop: 1296, ahorro_mensual_cop: 4669, ranking_vampiros: [{dispositivo: 'Cafetera', habitacion: 'Cocina', watts_fantasma: 2.25}]})`
+  y `toggleOverlay('overlay-resultados')`. Para probar el backend sin servidor, importa `simular_consumo` y `SimulacionRequest` desde `main.py` en Python.
 - Con Playwright: guarda las capturas dentro de `.playwright-mcp/` y bórralas al terminar. Para ver cambios usa una recarga
   forzada (`fetch(archivo,{cache:'reload'})` y luego `location.reload()`, o Ctrl+Shift+R en el navegador).
+  Si Playwright dice "Browser is already in use", usa Chrome headless desde la terminal: `chrome --headless=new --window-size=1920,1080
+  --virtual-time-budget=3000 --screenshot=ruta.png URL` y, para leer resultados de una prueba escrita en una página temporal, `--dump-dom`.
+  Esas páginas temporales (`FRONTEND/_t_*.html`) se borran al terminar.
 - No cambies la lógica del backend (fórmulas de consumo/costo) salvo petición explícita.
 - Antes de editar, lee el archivo; cambios pequeños y revisables. No añadas dependencias sin consultar.
 - Si una página bloquea la lectura automática, no la esquives (por ejemplo cambiando el User-Agent): usa otra fuente o pide el dato al usuario.
@@ -146,4 +176,6 @@ rankea dispositivos "vampiro" en standby y un asistente de IA local da recomenda
 - Cuando el usuario diga que una versión terminó: compara la rama base con la última, y propón **nombre de rama, mensaje de commit
   y descripción** siguiendo *Conventional Commits* (`feat(frontend): ...`, `fix(backend): ...`, `refactor`, `style`, `docs`),
   con una descripción clara y detallada de lo agregado/arreglado. Mensajes en español. Ramas en camelCase sin tildes.
+- **Los PR van a `develop`** (el equipo integra ahí; `main` sigue en la "Base version"). Antes de subir una rama: `git fetch` y comprueba que su nombre
+  no exista ya en `origin` (un nombre repetido da `non-fast-forward`); si la base avanzó, `git rebase origin/<rama>` y luego `git push -u origin <rama>`.
 - Terminar commits con la línea Co-Authored-By indicada por la herramienta.

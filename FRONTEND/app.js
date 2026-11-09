@@ -16,6 +16,8 @@ function ponerEstadoBotonIA(estado) {
     boton.classList.toggle('listo', estado === 'LISTO');
     document.getElementById('txt-btn-ia').textContent = TEXTO_BOTON_IA[estado];
     document.getElementById('badge-ia').classList.toggle('oculto', estado !== 'LISTO');   // el punto ámbar avisa que hay análisis nuevo
+    // Si la casa cambió (IDLE), los resultados guardados ya no corresponden a ella: se esconde su botón
+    if (estado === 'IDLE') document.getElementById('btn-resultados').classList.add('oculto');
 }
 
 
@@ -26,7 +28,8 @@ let casaUsuario = { "Sala": [], "Cocina": [], "Habitación Principal": [], "Bañ
 const DURACION_SIMULACION_MS = 120000;
 
 let indexSeleccionado = 0;
-let estadoBotonFlotante = 'IDLE'; 
+let estadoBotonFlotante = 'IDLE';
+let numeroSimulacion = 0;   // cuenta las simulaciones: así una animación vieja no muestra el botón de resultados de otra
 
 window.onload = () => { 
     actualizarTodoElUI(); 
@@ -313,6 +316,7 @@ function cerrarChatIA() { document.getElementById('panel-chat-ia').classList.add
 async function ejecutarMotorTotal() {
     ponerEstadoBotonIA('CALCULANDO');
     cerrarChatIA();
+    const miSimulacion = ++numeroSimulacion;
 
     const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
 
@@ -320,20 +324,17 @@ async function ejecutarMotorTotal() {
         const resMath = await fetch('http://127.0.0.1:8000/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!resMath.ok) throw new Error("Error en servidor local.");
         const datos = await resMath.json();
-        
-        let htmlVampiros = "";
-        if (datos.ranking_vampiros.length > 0) {
-            htmlVampiros = `<h4 class="titulo-fugas">Fugas en reposo detectadas</h4>`;
-            datos.ranking_vampiros.forEach(v => {
-                htmlVampiros += `<div class="vampiro-item"><strong>${v.dispositivo}</strong> - ${v.watts_fantasma} W desperdiciados</div>`;
-            });
-        }
-        document.getElementById('resumen-fugas').innerHTML = htmlVampiros;
 
         document.getElementById('panel-vista').style.animation = "none";
         void document.getElementById('panel-vista').offsetWidth; 
         document.getElementById('panel-vista').style.animation = `cicloDiaNoche ${DURACION_SIMULACION_MS / 1000}s ease-in-out forwards`;
-        animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop);
+        // Al terminar el día simulado (2 min) aparece el botón del panel de resultados. No espera a la IA, que es lenta.
+        animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop, () => {
+            const sigueVigente = miSimulacion === numeroSimulacion && estadoBotonFlotante !== 'IDLE';
+            if (!sigueVigente) return;   // la casa cambió o empezó otra simulación: estos datos ya no sirven
+            dibujarPanelResultados(datos);
+            document.getElementById('btn-resultados').classList.remove('oculto');
+        });
 
         document.getElementById('mensaje-ia-texto').innerText = "Gemma 4 está analizando tus datos...";
         const resIA = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: datos.prompt_generado }) });
@@ -364,7 +365,55 @@ function actualizarCielo(minutosSimulados) {
     reloj.classList.toggle('es-dia', esDia);
 }
 
-function animarContadoresTiempoReal(kwhFinal, copFinal) {
+// Escribe un valor en pesos colombianos: 1234567.8 -> "$1.234.568"
+function formatearPesos(valor) {
+    return '$' + Math.round(valor).toLocaleString('es-CO');
+}
+
+// Escribe energía con coma decimal: 1.4816 -> "1,48 kWh". Así el punto queda solo para los miles de los pesos ("$1.296")
+// y los dos números juntos no se confunden.
+function formatearKwh(valor) {
+    return valor.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' kWh';
+}
+
+// Llena el panel de resultados con lo que devolvió /api/simular. No usa la IA.
+function dibujarPanelResultados(datos) {
+    const ahorroMes = datos.ahorro_mensual_cop || 0;
+    const ahorroAnio = ahorroMes * 12;   // el backend calcula el mes con 30 días; el año son 12 de esos meses
+
+    document.getElementById('res-kwh').textContent = formatearKwh(datos.consumo_total_kwh);
+    document.getElementById('res-cop').textContent = formatearPesos(datos.costo_simulado_cop);
+    document.getElementById('res-ahorro-mes').textContent = formatearPesos(ahorroMes);
+    document.getElementById('res-ahorro-anio').textContent = formatearPesos(ahorroAnio);
+    document.getElementById('res-costo-mes').textContent = formatearPesos(datos.costo_simulado_cop * 30);
+
+    const ranking = datos.ranking_vampiros;
+    const hayAhorro = ranking.length > 0;
+    document.querySelector('.ahorro-resultados').classList.toggle('sin-ahorro', !hayAhorro);   // sin vampiros, las cifras se apagan
+    document.getElementById('res-mensaje').textContent = hayAhorro
+        ? 'Si desconectas tus dispositivos vampiro, ahorrarías'
+        : 'Ningún dispositivo desconectable gasta en reposo, así que no hay nada que desconectar.';
+
+    const lista = document.getElementById('res-vampiros');
+    document.getElementById('res-titulo-vampiros').hidden = !hayAhorro;   // sin vampiros no hay ranking: tampoco su título
+    if (!hayAhorro) {
+        lista.innerHTML = '';
+        return;
+    }
+
+    // El backend ya entrega el ranking de mayor a menor, así que el primero es el que llena la barra completa.
+    // Aquí sí se numera: el orden del ranking es justo lo que importa.
+    const maximo = ranking[0].watts_fantasma;
+    lista.innerHTML = ranking.map((v, i) => `
+        <li class="fila-vampiro">
+            <span class="puesto-vampiro">${i + 1}</span>
+            <span class="nombre-vampiro"><strong>${v.dispositivo}</strong><small>${v.habitacion}</small></span>
+            <span class="barra-vampiro"><span class="relleno-vampiro" style="width: ${(v.watts_fantasma / maximo) * 100}%"></span></span>
+            <span class="watts-vampiro">${v.watts_fantasma} W</span>
+        </li>`).join('');
+}
+
+function animarContadoresTiempoReal(kwhFinal, copFinal, alTerminar) {
     const reloj = document.getElementById('reloj-simulacion');
     const horaDigital = document.getElementById('hora-digital');
     const contadores = document.getElementById('contadores-tiempo-real');
@@ -380,9 +429,10 @@ function animarContadoresTiempoReal(kwhFinal, copFinal) {
         let minSim = Math.floor(progreso * 1440);
         horaDigital.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
         actualizarCielo(minSim);
-        txtKwh.innerText = `${(progreso * kwhFinal).toFixed(2)} kWh`;
+        txtKwh.innerText = formatearKwh(progreso * kwhFinal);
         txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
         if (progreso < 1) requestAnimationFrame(actualizar);
+        else alTerminar();
     }
     requestAnimationFrame(actualizar);
 }

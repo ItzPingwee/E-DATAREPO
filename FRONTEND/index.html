@@ -18,6 +18,32 @@
 </head>
 <body>
 
+    <!-- PORTADA: cubre toda la app hasta que el usuario la levanta como una cortina (portada.js).
+         Tiene el mismo fondo que la app, el logo grande al centro y flechas que invitan a deslizar. -->
+    <section id="portada" class="visible" aria-label="Pantalla de bienvenida">
+        <div class="contenido-portada">
+            <h1 class="logo-portada" aria-label="E-DATA, energía en datos">
+                <span class="logo-letras" aria-hidden="true">E</span>
+                <svg class="logo-hoja" viewBox="0 0 60 26" aria-hidden="true">
+                    <path class="hoja-cuerpo" d="M2 15C13 3 37 0 58 5 49 20 23 26 2 15z"/>
+                    <path class="hoja-nervio" d="M7 15C21 9 37 7 50 8"/>
+                </svg>
+                <span class="logo-letras" aria-hidden="true">DATA</span>
+            </h1>
+            <p class="lema-portada">Energía en datos · cada watt cuenta</p>
+        </div>
+
+        <!-- Es un botón de verdad: se puede entrar con Enter, Espacio o clic, no solo arrastrando -->
+        <button type="button" id="btn-entrar" class="entrar-portada" aria-label="Entrar a E-DATA">
+            <span class="texto-entrar">Arrastra hacia arriba para entrar</span>
+            <span class="flechas-entrar" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+        </button>
+    </section>
+
     <div id="panel-vista">
         <!-- Logotipo: letras en Instrument Serif (la misma fuente de los títulos) y la hoja como guion. aria-label para lectores de pantalla -->
         <h1 class="titulo-vista" aria-label="E-DATA, energía en datos">
@@ -82,7 +108,7 @@
         <div id="contadores-tiempo-real" class="vidrio">
             <div class="caja-contador">
                 <div class="label">Energía acumulada</div>
-                <div id="live-kwh" class="valor">0.00 kWh</div>
+                <div id="live-kwh" class="valor">0,00 kWh</div>
             </div>
             <div class="caja-contador">
                 <div class="label">Costo proyectado</div>
@@ -99,9 +125,14 @@
             </div>
             <div class="cuerpo-chat">
                 <p id="mensaje-ia-texto">Esperando ejecución de simulación...</p>
-                <div id="resumen-fugas"></div>
             </div>
         </div>
+
+        <!-- Botón del panel de resultados: está oculto y app.js lo muestra cuando termina el día simulado -->
+        <button id="btn-resultados" class="oculto" onclick="toggleOverlay('overlay-resultados')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"/></svg>
+            <span>Panel de resultados</span>
+        </button>
 
         <!-- Botón principal: simula el día y después abre el análisis de la IA. Su texto e ícono cambian con el estado (ponerEstadoBotonIA en app.js) -->
         <button id="btn-chat-ia" onclick="manejarClickBotonFlotante()">
@@ -225,11 +256,41 @@
                 <!-- Se generan los cuadros de las habitaciones por JS -->
             </div>
         </div>
+
+        <!-- OVERLAY 4: PANEL DE RESULTADOS (dibujarPanelResultados en app.js lo llena con lo que devolvió /api/simular) -->
+        <div id="overlay-resultados" class="overlay-panel oculto">
+            <div class="header-overlay">
+                <h2>Resultados de tu día</h2>
+                <button class="btn-cerrar" aria-label="Cerrar" onclick="toggleOverlay('overlay-resultados')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="hoja-resultados">
+                <!-- Lo importante primero: cuánto se ahorra. El resto son datos de apoyo, más discretos -->
+                <section class="ahorro-resultados" aria-labelledby="res-mensaje">
+                    <p id="res-mensaje" class="mensaje-ahorro"></p>
+                    <div class="cifras-ahorro">
+                        <p class="ahorro-mes"><span id="res-ahorro-mes">$0</span> <small>al mes</small></p>
+                        <p class="ahorro-anio"><span id="res-ahorro-anio">$0</span> <small>al año</small></p>
+                    </div>
+                </section>
+
+                <dl class="datos-resultados">
+                    <div><dt>Consumo del día</dt><dd id="res-kwh">0,00 kWh</dd></div>
+                    <div><dt>Costo del día</dt><dd id="res-cop">$0</dd></div>
+                    <div><dt>Costo al mes (30 días)</dt><dd id="res-costo-mes">$0</dd></div>
+                </dl>
+
+                <h3 id="res-titulo-vampiros" class="subtitulo">Dispositivos vampiro, de mayor a menor consumo en reposo</h3>
+                <ol id="res-vampiros" class="lista-vampiros"></ol>
+            </div>
+        </div>
     </div>
 
     <!-- Orden importante: primero los datos, luego el dibujo y al final la lógica -->
     <script src="catalogo.js"></script>
     <script src="casa2d.js"></script>
     <script src="app.js"></script>
+    <script src="portada.js"></script>
 </body>
 </html>

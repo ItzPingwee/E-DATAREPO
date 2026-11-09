@@ -1567,7 +1567,8 @@ function controlesBloqueados() {
     const activo = document.activeElement;
     const escribiendo = activo && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activo.tagName);
     const panelAbierto = document.querySelector('.overlay-panel:not(.oculto)') !== null;
-    return escribiendo || panelAbierto;
+    const portadaPuesta = document.getElementById('portada').classList.contains('visible');   // detrás de la portada el avatar no debe moverse
+    return escribiendo || panelAbierto || portadaPuesta;
 }
 
 function nombreDeTecla(evento) {
