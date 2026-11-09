@@ -41,8 +41,9 @@ class IARequest(BaseModel):
 @app.post("/api/simular")
 def simular_consumo(datos: SimulacionRequest):
     total_kwh_dia = 0
+    kwh_standby_vampiros = 0   # standby diario que se evitaría desconectando los vampiros
     max_heap = []
-    
+
     for hab in datos.habitaciones:
         for disp in hab.dispositivos:
             # 1. Gasto por uso activo
@@ -57,7 +58,9 @@ def simular_consumo(datos: SimulacionRequest):
                 # 3. MAX-HEAP: Solo entran los desconectables físicos con fuga real
                 if disp.desconectable and disp.watts_standby > 0:
                     heapq.heappush(max_heap, (-disp.watts_standby, disp.nombre, hab.nombre))
-            
+                    # El ahorro es justo el standby que este aparato ya sumó al consumo del día
+                    kwh_standby_vampiros += kwh_standby
+
             total_kwh_dia += (kwh_activo + kwh_standby)
     
     costo_total_cop = total_kwh_dia * datos.tarifa_kwh
@@ -65,7 +68,6 @@ def simular_consumo(datos: SimulacionRequest):
     
     # Procesar Vampiros
     vampiros_ordenados = []
-    ahorro_mensual_potencial = 0
     nombres_vampiros = []
     
     while max_heap:
@@ -78,8 +80,10 @@ def simular_consumo(datos: SimulacionRequest):
             "watts_fantasma": watts_reales
         })
         nombres_vampiros.append(nombre_disp)
-        ahorro_mensual_potencial += ((watts_reales * 24) / 1000) * 30 * datos.tarifa_kwh
-        
+
+    # Ahorro al mes (30 días) si el usuario desconecta todos los vampiros
+    ahorro_mensual_potencial = kwh_standby_vampiros * 30 * datos.tarifa_kwh
+
     # Construir Prompt Unificado oculto
     estado_presupuesto = "respetó" if costo_total_cop <= datos.presupuesto_diario else "superó"
     
@@ -97,6 +101,7 @@ def simular_consumo(datos: SimulacionRequest):
     return {
         "consumo_total_kwh": round(total_kwh_dia, 2),
         "costo_simulado_cop": round(costo_total_cop, 2),
+        "ahorro_mensual_cop": round(ahorro_mensual_potencial, 2),
         "ranking_vampiros": vampiros_ordenados,
         "prompt_generado": prompt_ia
     }
