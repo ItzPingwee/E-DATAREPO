@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-DATA Visual Constructor</title>
+    <style>
+        body { background-color: #1a1a24; color: #ffffff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .contenedor { display: flex; gap: 20px; width: 100%; max-width: 1000px; flex-wrap: wrap; }
+        .tarjeta { background-color: #2a2a36; padding: 25px; border-radius: 12px; flex: 1; min-width: 300px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+        h1, h2, h3 { color: #4CAF50; margin-top: 0; }
+        select, button, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; box-sizing: border-box; }
+        select, input[type="number"] { background-color: #3b3b4d; color: white; }
+        .btn-accion { background-color: #4CAF50; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-accion:hover:not(:disabled) { background-color: #45a049; }
+        .btn-accion:disabled { background-color: #888; cursor: wait; }
+        .btn-agregar { background-color: #2196F3; }
+        .btn-agregar:hover { background-color: #1976D2; }
+        .btn-ia { background-color: #9C27B0; margin-top: 15px; }
+        .btn-ia:hover:not(:disabled) { background-color: #7B1FA2; }
+        .item-casa { background-color: #1e1e2f; padding: 10px; margin-bottom: 8px; border-left: 4px solid #2196F3; font-size: 14px; border-radius: 4px; }
+        .dinero { color: #4CAF50; font-size: 28px; font-weight: bold; }
+        .ia-box { background-color: #1e1e2f; padding: 15px; margin-top: 15px; border: 1px solid #9C27B0; border-radius: 8px; color: #E1BEE7; font-style: italic; display: none; }
+        .vampiro-item { background-color: #3b3b4d; padding: 10px; margin: 8px 0; border-left: 4px solid #ff4d4d; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; width: 100%; margin-bottom: 30px;">E-DATA Visual MVP</h1>
+    <div class="contenedor">
+        
+        <!-- PANEL 1: CONSTRUCTOR -->
+        <div class="tarjeta">
+            <h2>1. Arma tu Casa</h2>
+            <label>Habitación:</label>
+            <select id="select-habitacion">
+                <option value="Cocina">Cocina</option>
+                <option value="Sala">Sala</option>
+                <option value="Habitación Principal">Habitación Principal</option>
+                <option value="Exterior">Exterior</option>
+            </select>
+
+            <label>Aparato (Catálogo):</label>
+            <select id="select-aparato" onchange="actualizarFormulario()"></select>
+
+            <!-- OPCIONES DINÁMICAS -->
+            <div id="opciones-variables" style="padding: 15px; background-color: #1e1e2f; border-radius: 8px; margin: 15px 0;">
+                <p id="txt-info-fija" style="display: none; color: #81C784; font-size: 14px; margin: 0; padding-bottom: 10px; border-bottom: 1px solid #444;"></p>
+                
+                <div id="div-minutos">
+                    <label>Minutos de uso al día:</label>
+                    <input type="number" id="input-minutos" value="30" min="1" max="1440">
+                </div>
+                
+                <!-- CHECKBOX 1: EL HÁBITO DEL USUARIO -->
+                <div id="div-conexion" style="display: flex; align-items: center; margin-top: 15px;">
+                    <input type="checkbox" id="check-conectado" checked style="width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer;">
+                    <label for="check-conectado" style="cursor: pointer; font-size: 15px;">¿Lo dejas enchufado el resto del día?</label>
+                </div>
+
+                <!-- CHECKBOX 2: LA DECISIÓN DE SI ES DESCONECTABLE -->
+                <div style="display: flex; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444;">
+                    <input type="checkbox" id="check-desconectable" checked style="width: auto; margin-right: 10px; transform: scale(1.3); cursor: pointer;">
+                    <label for="check-desconectable" style="cursor: pointer; font-size: 15px; color: #ffb74d;">¿Es desconectable?</label>
+                </div>
+            </div>
+
+            <button class="btn-accion btn-agregar" onclick="agregarDispositivo()">➕ Añadir a la casa</button>
+
+            <h3 style="margin-top: 25px;">Tu Casa Actual:</h3>
+            <div id="lista-casa-actual"><p style="color:#888; font-size: 14px; text-align: center;">Tu casa está vacía.</p></div>
+        </div>
+
+        <!-- PANEL 2: RESULTADOS Y IA -->
+        <div class="tarjeta">
+            <h2>2. Simulación</h2>
+            <button id="btn-simular" class="btn-accion" onclick="ejecutarSimulacion()" disabled>🚀 Calcular Gasto Matemático</button>
+
+            <div id="panel-resultados" style="display: none; margin-top: 20px;">
+                <p>Consumo Diario: <strong id="txt-kwh">0</strong> kWh</p>
+                <p>Gasto Diario: <span id="txt-dinero" class="dinero">$0 COP</span></p>
+                
+                <h3 style="margin-top: 20px;">Fugas Detectadas (Standby):</h3>
+                <div id="lista-vampiros"></div>
+
+                <hr style="border: 1px solid #444; margin: 25px 0;">
+
+                <h2>3. Asesoría de IA</h2>
+                <button id="btn-ia" class="btn-accion btn-ia" onclick="consultarIA()">✨ Consultar a Gemma 4</button>
+                <div id="mensaje-ia" class="ia-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // EL CATÁLOGO YA NO IMPONE SI ES DESCONECTABLE O NO, SOLO DEFINE EL USO
+        const catalogoExcel = [
+            { nombre: "Air-fryer", watts_activos: 1400, watts_standby: 2, tipo: "variable" },
+            { nombre: "Microondas", watts_activos: 1200, watts_standby: 4, tipo: "variable" },
+            { nombre: "Televisor OLED", watts_activos: 100, watts_standby: 5, tipo: "variable" },
+            { nombre: "Sanduchera", watts_activos: 800, watts_standby: 0, tipo: "variable" },
+            { nombre: "Refrigerador", watts_activos: 300, watts_standby: 0, tipo: "ciclo" },
+            { nombre: "Router WiFi", watts_activos: 15, watts_standby: 0, tipo: "continuo" }
+        ];
+
+        let casaUsuario = {};
+        let promptGeneradoParaIA = ""; 
+
+        window.onload = () => {
+            const select = document.getElementById('select-aparato');
+            catalogoExcel.forEach((item, index) => {
+                select.innerHTML += `<option value="${index}">${item.nombre} (~${item.watts_activos}W)</option>`;
+            });
+            actualizarFormulario();
+        };
+
+        function actualizarFormulario() {
+            const indice = document.getElementById('select-aparato').value;
+            const aparato = catalogoExcel[indice];
+            
+            const divMinutos = document.getElementById('div-minutos');
+            const divConexion = document.getElementById('div-conexion');
+            const txtInfo = document.getElementById('txt-info-fija');
+            const checkDesconectable = document.getElementById('check-desconectable');
+
+            // Sugerencia visual (Si es nevera o router, sugerimos que no se desconecte, pero el usuario puede cambiarlo)
+            if (aparato.tipo === "variable") {
+                divMinutos.style.display = "block";
+                divConexion.style.display = "flex";
+                txtInfo.style.display = "none";
+                checkDesconectable.checked = true; // Por defecto marcado
+            } else if (aparato.tipo === "ciclo") {
+                divMinutos.style.display = "none";
+                divConexion.style.display = "none";
+                txtInfo.style.display = "block";
+                txtInfo.innerText = "ℹ️ Motor cíclico: Funciona ~30% del día automáticamente.";
+                checkDesconectable.checked = false; // Por defecto desmarcado (pero editable)
+            } else if (aparato.tipo === "continuo") {
+                divMinutos.style.display = "none";
+                divConexion.style.display = "none";
+                txtInfo.style.display = "block";
+                txtInfo.innerText = "ℹ️ Equipo Continuo: Funciona 24h al día.";
+                checkDesconectable.checked = false; // Por defecto desmarcado (pero editable)
+            }
+        }
+
+        function agregarDispositivo() {
+            const habitacion = document.getElementById('select-habitacion').value;
+            const aparato = catalogoExcel[document.getElementById('select-aparato').value];
+            
+            let horasUso = 0;
+            let conectado = true;
+
+            if (aparato.tipo === "variable") {
+                horasUso = document.getElementById('input-minutos').value / 60;
+                conectado = document.getElementById('check-conectado').checked;
+            } else if (aparato.tipo === "ciclo") {
+                horasUso = 24 * 0.30; 
+                conectado = true; // Un ciclo siempre queda conectado
+            } else if (aparato.tipo === "continuo") {
+                horasUso = 24;
+                conectado = true; // Continuo siempre conectado
+            }
+
+            // AQUI CAPTURAMOS LA DECISIÓN DEL USUARIO
+            const esDesconectableFisicamente = document.getElementById('check-desconectable').checked;
+
+            if (!casaUsuario[habitacion]) casaUsuario[habitacion] = [];
+            
+            casaUsuario[habitacion].push({
+                nombre: aparato.nombre,
+                watts_activos: aparato.watts_activos,
+                watts_standby: aparato.watts_standby,
+                horas_uso: horasUso,
+                dejado_conectado: conectado,
+                desconectable: esDesconectableFisicamente // <-- MANDAMOS LA DECISIÓN DEL USUARIO AL BACKEND
+            });
+
+            actualizarListaVisual();
+            document.getElementById('btn-simular').disabled = false;
+        }
+
+        function actualizarListaVisual() {
+            const cont = document.getElementById('lista-casa-actual');
+            cont.innerHTML = "";
+            for (const [hab, aparatos] of Object.entries(casaUsuario)) {
+                cont.innerHTML += `<h4 style="margin: 10px 0 5px 0; color:#bbb; border-bottom: 1px solid #444; padding-bottom: 5px;">${hab}</h4>`;
+                aparatos.forEach(ap => {
+                    const hrs = ap.horas_uso.toFixed(1);
+                    const est = ap.dejado_conectado ? '🟢 Enchufado' : '🔴 Desconectado';
+                    const etiquetaDesc = ap.desconectable ? '<span style="color:#ffb74d; font-size:11px;">[Desconectable]</span>' : '<span style="color:#90caf9; font-size:11px;">[Fijo]</span>';
+                    
+                    cont.innerHTML += `
+                        <div class="item-casa">
+                            <strong>${ap.nombre}</strong> ${etiquetaDesc} <br> 
+                            <small>Uso Activo: ${hrs}h | Estado: ${est}</small>
+                        </div>`;
+                });
+            }
+        }
+
+        async function ejecutarSimulacion() {
+            document.getElementById('btn-simular').disabled = true;
+            document.getElementById('mensaje-ia').style.display = "none"; 
+            
+            const payload = { habitaciones: [] };
+            for (const [hab, aparatos] of Object.entries(casaUsuario)) {
+                payload.habitaciones.push({ nombre: hab, dispositivos: aparatos });
+            }
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/simular', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const datos = await res.json();
+
+                document.getElementById('txt-kwh').innerText = datos.consumo_total_kwh;
+                document.getElementById('txt-dinero').innerText = "$" + datos.costo_simulado_cop.toLocaleString() + " COP";
+                
+                const contenedorVampiros = document.getElementById('lista-vampiros');
+                contenedorVampiros.innerHTML = "";
+                
+                if (datos.ranking_vampiros.length === 0) {
+                    contenedorVampiros.innerHTML = "<p style='color: #81C784;'>¡Excelente! No hay fugas de energía.</p>";
+                } else {
+                    datos.ranking_vampiros.forEach(v => {
+                        contenedorVampiros.innerHTML += `
+                        <div class="vampiro-item">
+                            <strong>${v.dispositivo}</strong> (${v.habitacion})<br>
+                            <small>Fuga de Standby: ${v.watts_fantasma}W</small>
+                        </div>`;
+                    });
+                }
+
+                promptGeneradoParaIA = datos.prompt_generado;
+                document.getElementById('panel-resultados').style.display = "block";
+            } catch (error) {
+                alert("Error: Asegúrate de que el servidor Python esté encendido.");
+            } finally {
+                document.getElementById('btn-simular').disabled = false;
+            }
+        }
+
+        async function consultarIA() {
+            const btn = document.getElementById('btn-ia');
+            btn.disabled = true;
+            btn.innerText = "Pensando (Gemma 4)...";
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/ia', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: promptGeneradoParaIA })
+                });
+                const datos = await res.json();
+
+                const cajonIA = document.getElementById('mensaje-ia');
+                cajonIA.innerText = datos.mensaje_ia;
+                cajonIA.style.display = "block";
+            } catch (error) {
+                alert("Error: Asegúrate de que LM Studio esté corriendo en el puerto 6767.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "✨ Consultar a Gemma 4";
+            }
+        }
+    </script>
+</body>
+</html>
