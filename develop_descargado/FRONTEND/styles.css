@@ -1,0 +1,1167 @@
+/* ==========================================================================
+   E-DATA — sistema de diseño (V2)
+   Idea: verde bosque muy oscuro + vidrio líquido + un degradado esmeralda->musgo
+   que se usa solo en lo importante. El ámbar queda reservado para los vampiros.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. TOKENS: todos los colores, radios y espacios viven aquí
+   -------------------------------------------------------------------------- */
+:root {
+    /* Alto de la ventana de la casa: lo usan ella y el logo (que se centra en el espacio sobre la ventana) */
+    --alto-ventana: clamp(420px, 60vh, 640px);
+    /* Ancho de la ventana de la casa (más ancha en pantallas grandes, sin pisar el dock) y ancho del dock: el dock se pega a su borde */
+    --ancho-escena: clamp(480px, calc(100vw - 560px), 940px);
+    --ancho-dock: 232px;
+
+    /* Fondos */
+    --abismo: #050d0a;
+    --bosque: #0a1a13;
+    --cielo-noche: #050d0a;      /* fondo durante la "noche" de la simulación */
+    --cielo-dia: #174a3a;        /* fondo durante el "día" de la simulación (sigue siendo un verde oscuro) */
+
+    /* Verdes */
+    --esmeralda-profundo: #0c4a34;
+    --esmeralda: #1c9a68;
+    --musgo: #86d36c;
+    --gradiente-acento: linear-gradient(135deg, #86d36c 0%, #1c9a68 100%);
+
+    /* Acentos funcionales */
+    --ambar: #e9ad52;            /* vampiros / consumo en reposo */
+    --coral: #e58a78;            /* eliminar */
+    --niebla: #7cb7c0;           /* equipos que no se pueden desconectar */
+
+    /* Texto */
+    --texto: #e9f2ed;
+    --texto-suave: #a7bcb0;
+    --texto-tenue: #7b9487;
+    --texto-sobre-acento: #04140d;
+
+    /* Vidrio líquido */
+    --vidrio-relleno: linear-gradient(145deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%);
+    --vidrio-oscuro: linear-gradient(145deg, rgba(14, 38, 28, 0.62) 0%, rgba(6, 16, 12, 0.72) 100%);
+    --vidrio-borde: rgba(204, 255, 226, 0.14);
+    --vidrio-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+    --vidrio-desenfoque: blur(22px) saturate(140%);
+    --sombra-flotante: 0 24px 60px -18px rgba(0, 0, 0, 0.65);
+
+    /* Radios: cambian según la jerarquía del elemento */
+    --radio-hoja: 28px;
+    --radio-tarjeta: 20px;
+    --radio-control: 12px;
+    --radio-pildora: 999px;
+
+    /* Espacios */
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-5: 24px;
+    --espacio-6: 32px;
+    --espacio-7: 48px;
+
+    /* Tipografía */
+    --fuente-titulo: 'Instrument Serif', Georgia, serif;
+    --fuente-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   2. BASE
+   -------------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    font-family: var(--fuente-ui);
+    font-weight: 400;
+    color: var(--texto);
+    background-color: var(--abismo);
+    overflow: hidden;
+    color-scheme: dark;
+}
+
+button { font-family: inherit; }
+
+/* Foco visible para quien navega con teclado */
+:focus-visible { outline: 2px solid var(--musgo); outline-offset: 3px; }
+
+/* Barras de scroll finas y discretas */
+* { scrollbar-width: thin; scrollbar-color: rgba(134, 211, 108, 0.28) transparent; }
+
+.oculto { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* Material reutilizable: el "vidrio líquido" */
+.vidrio {
+    background: var(--vidrio-relleno);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--vidrio-brillo), var(--sombra-flotante);
+    backdrop-filter: var(--vidrio-desenfoque);
+    -webkit-backdrop-filter: var(--vidrio-desenfoque);
+}
+
+/* --------------------------------------------------------------------------
+   3. ESCENA PRINCIPAL
+   -------------------------------------------------------------------------- */
+@keyframes cicloDiaNoche {
+    0%   { background-color: var(--cielo-noche); }
+    40%  { background-color: var(--cielo-dia); }
+    60%  { background-color: var(--cielo-dia); }
+    100% { background-color: var(--cielo-noche); }
+}
+
+#panel-vista {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: var(--cielo-noche);
+}
+
+/* Resplandores de color sobre el fondo (el color base lo anima cicloDiaNoche). La portada usa el mismo fondo. */
+#panel-vista::before,
+#portada::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 55% at 12% 8%, rgba(28, 154, 104, 0.30) 0%, transparent 70%),
+        radial-gradient(55% 50% at 92% 96%, rgba(134, 211, 108, 0.16) 0%, transparent 70%),
+        radial-gradient(80% 60% at 50% 120%, rgba(12, 74, 52, 0.55) 0%, transparent 70%);
+}
+
+/* Grano muy fino: da textura de papel al degradado y evita bandas de color */
+#panel-vista::after,
+#portada::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.titulo-vista {
+    position: absolute;
+    /* La ventana está centrada, así que su borde de arriba queda en (50% − alto/2). El logo va justo en la mitad
+       entre el tope de la página y ese borde (translateY(-50%) lo centra sobre ese punto). */
+    top: calc((50% - var(--alto-ventana) / 2) / 2);
+    transform: translateY(-50%);
+    left: 0;
+    width: 100%;
+    margin: 0;
+    text-align: center;
+    font-family: var(--fuente-titulo);
+    font-weight: 400;
+    font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: var(--texto);
+    opacity: 0.92;
+    pointer-events: none;
+    z-index: 3;
+    /* Logotipo en una fila: E, hoja y DATA, alineados por el centro de las mayúsculas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.1em;
+}
+.logo-letras { display: block; line-height: 1; }
+/* La hoja hace de guion: más baja que el centro de las letras, como en el logo */
+.logo-hoja { width: 0.42em; height: auto; margin-top: 0.1em; overflow: visible; }
+.hoja-cuerpo { fill: #86d36c; }
+.hoja-nervio { fill: none; stroke: #050d0a; stroke-width: 2.2; stroke-linecap: round; }
+
+/* --------------------------------------------------------------------------
+   PORTADA: la cortina que cubre la app hasta que el usuario la levanta (portada.js)
+   -------------------------------------------------------------------------- */
+#portada {
+    --progreso: 0;                       /* portada.js lo sube de 0 a 1 mientras se arrastra (1 = ya basta para entrar) */
+    position: fixed;
+    inset: 0;
+    z-index: 100;                        /* por encima de los overlays (z-index 60) */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: var(--cielo-noche);
+    cursor: grab;
+    user-select: none;                   /* al arrastrar no se selecciona el texto */
+    touch-action: none;
+    transition: transform 0.6s cubic-bezier(0.7, 0, 0.2, 1);   /* debe coincidir con MS_SUBIDA de portada.js */
+}
+#portada.arrastrando { cursor: grabbing; transition: none; }   /* mientras se arrastra, la cortina sigue la mano sin retraso */
+
+.contenido-portada { position: relative; z-index: 1; margin-bottom: 6vh; text-align: center; pointer-events: none; }   /* el margen sube el logo al centro óptico */
+
+/* Lo memorable de la portada: la hoja del logo respira como el LED de standby de un aparato (el tema del proyecto).
+   Al arrastrar se "enciende": brilla más cuanto más subes, y al máximo cuando ya puedes soltar para entrar. */
+.logo-portada .logo-hoja {
+    animation: respirarStandby 4.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 calc(4px + var(--progreso) * 26px) rgba(134, 211, 108, calc(0.2 + var(--progreso) * 0.8)))
+            drop-shadow(0 0 calc(var(--progreso) * 60px) rgba(134, 211, 108, calc(var(--progreso) * 0.55)));   /* segunda capa: el resplandor ancho */
+    transition: filter 0.35s ease-out;
+}
+#portada.arrastrando .logo-hoja { animation: none; opacity: 1; }
+@keyframes respirarStandby {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+}
+
+.logo-portada {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.1em;
+    font-family: var(--fuente-titulo);
+    font-weight: 400;
+    font-size: clamp(4.5rem, 13vw, 11rem);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: var(--texto);
+}
+.lema-portada {
+    margin: var(--espacio-4) 0 0;
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: var(--texto-suave);
+}
+
+/* Invitación a entrar: texto y tres flechas que se encienden en cascada hacia abajo */
+.entrar-portada {
+    position: absolute;
+    bottom: var(--espacio-6);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--espacio-2);
+    padding: var(--espacio-3) var(--espacio-5);
+    border: none;
+    border-radius: var(--radio-control);
+    background: none;
+    color: var(--texto-suave);
+    cursor: pointer;
+    opacity: calc(1.3 - var(--progreso) * 1.3);   /* al arrastrar, la invitación se desvanece: el gesto ya se entendió */
+    transition: color 0.2s ease;
+}
+.entrar-portada:hover { color: var(--texto); }
+.texto-entrar { font-size: 0.95rem; font-weight: 400; letter-spacing: 0.02em; }
+.flechas-entrar { display: flex; flex-direction: column; align-items: center; }
+.flechas-entrar svg {
+    width: 44px;
+    height: 44px;
+    margin-top: -20px;                   /* las flechas se montan un poco para verse como una sola columna */
+    fill: none;
+    stroke: var(--musgo);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    animation: encenderFlecha 1.8s ease-in-out infinite;
+}
+.flechas-entrar svg:nth-child(2) { animation-delay: 0.2s; }
+.flechas-entrar svg:nth-child(3) { animation-delay: 0.4s; }
+@keyframes encenderFlecha {
+    0%, 100% { opacity: 0.15; transform: translateY(-4px); }
+    50%      { opacity: 1;    transform: translateY(4px); }
+}
+
+/* La casa tiene un halo esmeralda detrás para que flote sobre el fondo */
+.escena {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: var(--ancho-escena);
+    display: flex;
+    justify-content: center;
+}
+.escena::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    width: 125%;                 /* más grande que la casa: así el resplandor asoma por los bordes */
+    height: 100%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(28, 154, 104, 0.55) 0%, rgba(12, 74, 52, 0.28) 55%, transparent 100%);
+    filter: blur(30px);
+}
+
+/* Ventana de la casa: vidrio oscuro con borde de luz. Es más oscura que el fondo para que la casa "viva" dentro,
+   y translúcida para que el ciclo de día y noche se asome detrás. Los puntos del fondo se mueven con la vista (JS les da --pan-x / --pan-y). */
+.ventana-casa {
+    position: relative;
+    width: 100%;
+    height: var(--alto-ventana);         /* deja sitio al logo de arriba y a los contadores que salen abajo al simular */
+    overflow: hidden;
+    overflow: clip;                      /* como hidden, pero ni el teclado (Tab) ni el código pueden desplazar el contenido */
+    border-radius: var(--radio-hoja);
+    border: 1px solid var(--vidrio-borde);
+    background:
+        radial-gradient(rgba(204, 255, 226, 0.07) 1px, transparent 1.5px) var(--pan-x, 0px) var(--pan-y, 0px) / 30px 30px,
+        radial-gradient(90% 70% at 50% 28%, rgba(40, 120, 88, 0.22) 0%, transparent 70%),
+        linear-gradient(160deg, rgba(10, 30, 22, 0.60), rgba(3, 9, 7, 0.86));
+    box-shadow: var(--vidrio-brillo), inset 0 0 80px rgba(0, 0, 0, 0.55), var(--sombra-flotante);
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+}
+
+/* Zona que recibe el mouse: arrastrar para mover la vista, rueda para el zoom y clic para caminar */
+#casa-iso {
+    position: absolute;
+    inset: 0;
+    cursor: grab;
+    touch-action: none;
+}
+#casa-iso.arrastrando { cursor: grabbing; }
+#casa-mundo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    --escala: 1;
+    filter: drop-shadow(0 26px 24px rgba(0, 0, 0, 0.45));
+}
+.sprite-casa {
+    position: absolute;
+    max-width: none;               /* el ancho lo calcula JS para cada imagen */
+    pointer-events: none;          /* los clics atraviesan los dibujos y llegan al suelo */
+    user-select: none;
+}
+.grosor-piso {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+/* Pared entre dos habitaciones: la misma pieza que las paredes exteriores, pero casi transparente
+   para separar los espacios sin esconder lo que hay detrás */
+.pared-interior { opacity: 0.28; }
+.casa-vacia {
+    position: absolute;
+    width: 260px;
+    margin: 0;
+    color: var(--texto-suave);
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Cartel con el nombre de la habitación. Se divide entre la escala para mantener un tamaño legible */
+.etiqueta-habitacion {
+    position: absolute;
+    z-index: 9000;                 /* encima de muebles y paredes: con la casa llena, un mueble o la ducha del cuarto de adelante lo taparían */
+    transform: translate(-50%, -50%);
+    padding: calc(3px / var(--escala)) calc(11px / var(--escala));
+    border-radius: var(--radio-pildora);
+    font-size: calc(12px / var(--escala));
+    font-weight: 500;
+    color: var(--texto);
+    background: var(--vidrio-oscuro);       /* fondo oscuro: se lee sobre cerámica clara y sobre madera */
+    white-space: nowrap;
+    pointer-events: auto;                   /* al hacer clic, la vista se acerca a esa habitación */
+    cursor: zoom-in;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.etiqueta-habitacion:hover { color: var(--musgo); }
+
+/* Dispositivo instalado: disco de vidrio con su emoji. El anillo indica si gasta en reposo */
+.pin-dispositivo {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%, -62%);
+    border-radius: 50%;
+    font-size: 24px;
+    background: var(--vidrio-oscuro);
+    border: 2px solid var(--niebla);
+    box-shadow: 0 10px 14px -4px rgba(0, 0, 0, 0.6);
+    cursor: help;
+    transition: transform 0.18s ease;
+}
+.pin-dispositivo.en-reposo { border-color: var(--ambar); box-shadow: 0 0 18px rgba(233, 173, 82, 0.55), 0 10px 14px -4px rgba(0, 0, 0, 0.6); }
+.pin-dispositivo:hover { transform: translate(-50%, -62%) scale(1.15); }
+
+/* Dispositivo dibujado con su sprite (en vez del disco): el brillo hace de anillo de estado.
+   El mouse lo recibe la .zona-dispositivo (ver hacerDispositivoInteractivo); los clics siguen llegando al suelo para caminar. */
+.zona-dispositivo { position: absolute; cursor: help; }
+.sprite-casa.dispositivo-sprite { transition: filter 0.2s ease; }
+.sprite-casa.dispositivo-sprite.en-reposo { filter: drop-shadow(0 0 3px rgba(233, 173, 82, 0.95)) drop-shadow(0 0 9px rgba(233, 173, 82, 0.55)); }
+.sprite-casa.dispositivo-sprite.desconectado { filter: drop-shadow(0 0 3px rgba(150, 205, 230, 0.85)); }
+.sprite-casa.dispositivo-sprite.en-reposo.resaltado { filter: brightness(1.12) drop-shadow(0 0 4px rgba(233, 173, 82, 1)) drop-shadow(0 0 12px rgba(233, 173, 82, 0.7)); }
+.sprite-casa.dispositivo-sprite.desconectado.resaltado { filter: brightness(1.12) drop-shadow(0 0 5px rgba(150, 205, 230, 1)); }
+
+/* Ficha que aparece al pasar el mouse por un dispositivo */
+#ficha-dispositivo {
+    position: fixed;
+    z-index: 60;
+    max-width: 290px;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-tarjeta);
+    background: var(--vidrio-oscuro);
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-1);
+    pointer-events: none;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--texto-suave);
+}
+#ficha-dispositivo strong { font-size: 1.05rem; font-weight: 600; color: var(--texto); }
+#ficha-dispositivo .ficha-lugar { margin-bottom: var(--espacio-1); color: var(--musgo); }
+
+.ayuda-movimiento {
+    position: absolute;
+    left: var(--espacio-5);
+    bottom: var(--espacio-4);
+    max-width: calc(100% - 300px);       /* deja sitio a los controles de la derecha */
+    margin: 0;
+    padding: var(--espacio-2) var(--espacio-4);
+    border-radius: var(--radio-pildora);
+    background: var(--vidrio-oscuro);    /* con fondo, se lee aunque la casa pase por debajo */
+    font-size: 0.76rem;
+    line-height: 1.4;
+    color: var(--texto-suave);
+    pointer-events: none;
+}
+
+/* Controles de la vista: acercar, alejar, centrar en el avatar y ver toda la casa */
+.controles-vista {
+    position: absolute;
+    right: var(--espacio-4);
+    bottom: var(--espacio-4);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radio-pildora);
+}
+.controles-vista button {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto-suave);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.controles-vista button:hover { color: var(--texto); background: rgba(134, 211, 108, 0.12); border-color: rgba(134, 211, 108, 0.25); }
+.controles-vista svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* El porcentaje es un botón discreto: al hacer clic vuelve a ver toda la casa */
+.controles-vista #nivel-zoom { width: auto; min-width: 42px; padding: 0 4px; border-radius: var(--radio-pildora); font: inherit; font-size: 0.7rem; font-variant-numeric: tabular-nums; }
+
+/* --------------------------------------------------------------------------
+   4. DOCK DE NAVEGACIÓN, RELOJ Y CONTADORES
+   -------------------------------------------------------------------------- */
+.dock {
+    position: absolute;
+    top: 50%;
+    /* Pegado al borde izquierdo de la ventana de la casa (a 16 px), para que se lean como un solo grupo en cualquier pantalla.
+       El tope (min) evita que se salga por la izquierda cuando la pantalla es estrecha. */
+    right: min(calc(50% + var(--ancho-escena) / 2 + var(--espacio-4)), calc(100% - var(--ancho-dock) - var(--espacio-4)));
+    width: var(--ancho-dock);
+    transform: translateY(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-1);
+    padding: var(--espacio-2);
+    border-radius: var(--radio-hoja);
+}
+
+.dock-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-3);
+    padding: var(--espacio-3) var(--espacio-5) var(--espacio-3) var(--espacio-3);
+    border: 1px solid transparent;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--texto-suave);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.dock-btn svg { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.dock-btn:hover { color: var(--texto); background: rgba(134, 211, 108, 0.10); border-color: rgba(134, 211, 108, 0.22); }
+.dock-btn:hover svg { stroke: var(--musgo); }
+
+/* Reloj: un astro (sol o luna) recorre un arco; la hora digital va debajo.
+   app.js solo cambia dos variables (--x, --y) y la clase 'es-dia'; el resto lo hace el CSS. */
+#reloj-simulacion {
+    --ancho-reloj: 220px;
+    --alto-cielo: 104px;
+    --tamano-astro: 30px;
+    --altura-arco: 84px;                 /* qué tan alto sube el astro */
+    --x: 0;
+    --y: 0;
+
+    position: absolute;
+    top: var(--espacio-5);
+    right: var(--espacio-6);
+    z-index: 10;
+    display: none;                       /* app.js lo muestra al simular */
+    width: var(--ancho-reloj);
+    text-align: center;
+}
+
+/* Sin recuadro: el recorte con clip-path deja ver el resplandor por arriba y los lados (valores negativos),
+   pero corta en seco por abajo. Ese corte es el horizonte: el astro se oculta detrás de él. */
+.cielo { position: relative; height: var(--alto-cielo); clip-path: inset(-48px -48px 0 -48px); }
+
+/* Línea de horizonte: un hilo de luz que se desvanece en los extremos */
+.cielo::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(204, 255, 226, 0.35), transparent);
+}
+
+.estrellas {
+    position: absolute;
+    inset: 0;
+    opacity: 1;
+    transition: opacity 1.2s ease;
+    background:
+        radial-gradient(1.5px 1.5px at 18% 28%, rgba(255, 255, 255, 0.85), transparent),
+        radial-gradient(1px 1px at 34% 62%, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(1.5px 1.5px at 52% 22%, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(1px 1px at 71% 48%, rgba(255, 255, 255, 0.85), transparent),
+        radial-gradient(1.5px 1.5px at 86% 24%, rgba(255, 255, 255, 0.6), transparent),
+        radial-gradient(1px 1px at 8% 70%, rgba(255, 255, 255, 0.5), transparent);
+}
+#reloj-simulacion.es-dia .estrellas { opacity: 0; }
+
+/* El astro se coloca con las variables: --x avanza de izquierda a derecha y --y define la altura del arco */
+.astro {
+    position: absolute;
+    left: calc(var(--x) * (100% - var(--tamano-astro)));
+    bottom: calc(var(--y) * var(--altura-arco) - var(--tamano-astro));
+    width: var(--tamano-astro);
+    height: var(--tamano-astro);
+    border-radius: 50%;
+    /* De noche: luna pálida con un par de cráteres */
+    background:
+        radial-gradient(circle at 62% 66%, rgba(120, 145, 132, 0.45) 0 14%, transparent 15%),
+        radial-gradient(circle at 34% 36%, rgba(120, 145, 132, 0.35) 0 10%, transparent 11%),
+        radial-gradient(circle at 35% 30%, #f6fbf8, #c3d5cb 75%);
+    box-shadow: 0 0 22px rgba(214, 240, 226, 0.45);
+}
+/* De día: sol dorado con resplandor */
+#reloj-simulacion.es-dia .astro {
+    background: radial-gradient(circle at 35% 30%, #fff6cf, #f6c75a 55%, #e9ad52);
+    box-shadow: 0 0 26px 6px rgba(246, 199, 90, 0.6);
+}
+
+#hora-digital {
+    padding-top: var(--espacio-3);
+    font-size: 1.15rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;  /* los dígitos no "bailan" al cambiar */
+    letter-spacing: 0.12em;
+    color: var(--texto);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+#contadores-tiempo-real {
+    position: absolute;
+    bottom: var(--espacio-5);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: none;                       /* app.js lo muestra al simular */
+    border-radius: var(--radio-pildora);
+    padding: var(--espacio-3) var(--espacio-3);
+}
+.caja-contador {
+    min-width: 300px;
+    padding: var(--espacio-3) var(--espacio-7);
+    text-align: left;
+}
+.caja-contador + .caja-contador { border-left: 1px solid var(--vidrio-borde); }
+.caja-contador .label { margin-bottom: var(--espacio-1); font-size: 1rem; font-weight: 400; color: var(--texto-suave); }
+.caja-contador .valor {
+    font-size: 3.4rem;
+    line-height: 1.1;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, #f3fff6 10%, var(--musgo) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* En pantallas bajas los contadores se compactan para no tapar la casa */
+@media (max-height: 800px) {
+    .caja-contador { min-width: 240px; padding: var(--espacio-2) var(--espacio-6); }
+    .caja-contador .label { font-size: 0.9rem; }
+    .caja-contador .valor { font-size: 2.5rem; }
+}
+
+/* --------------------------------------------------------------------------
+   5. BOTÓN FLOTANTE Y PANEL DE LA IA
+   -------------------------------------------------------------------------- */
+#btn-chat-ia {
+    position: absolute;
+    bottom: var(--espacio-6);
+    right: var(--espacio-6);
+    z-index: 50;
+    height: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--espacio-3);
+    padding: 0 var(--espacio-6) 0 var(--espacio-5);
+    border-radius: var(--radio-pildora);       /* píldora: con texto se entiende qué hace; antes era un círculo sin nombre */
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--texto-sobre-acento);
+    background: var(--gradiente-acento);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: var(--vidrio-brillo), 0 10px 34px -6px rgba(28, 154, 104, 0.65);
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+#btn-chat-ia:hover { transform: translateY(-3px); box-shadow: var(--vidrio-brillo), 0 16px 40px -6px rgba(134, 211, 108, 0.6); }
+#btn-chat-ia svg { width: 22px; height: 22px; fill: currentColor; }
+
+/* Tres íconos dentro del botón, uno por estado (app.js pone la clase 'calculando' o 'listo'):
+   play = listo para simular · anillo = calculando · destello = el análisis de la IA está listo */
+.icono-destello, .icono-calculando { display: none; }
+#btn-chat-ia.listo .icono-play { display: none; }
+#btn-chat-ia.listo .icono-destello { display: block; }
+#btn-chat-ia.calculando .icono-play { display: none; }
+#btn-chat-ia.calculando .icono-calculando { display: block; animation: girar 1s linear infinite; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* Botón del panel de resultados: apilado sobre el principal. Es secundario (vidrio, no el degradado verde),
+   así el botón de simular sigue siendo la acción más llamativa. Aparece al terminar el día simulado. */
+#btn-resultados {
+    position: absolute;
+    bottom: calc(var(--espacio-6) + 56px + var(--espacio-3));   /* justo encima del botón principal (56 px de alto) */
+    right: var(--espacio-6);
+    z-index: 50;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-3);
+    padding: 0 var(--espacio-5);
+    border-radius: var(--radio-pildora);
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--texto);
+    background: var(--vidrio-oscuro);
+    border: 1px solid rgba(134, 211, 108, 0.35);
+    box-shadow: var(--vidrio-brillo), var(--sombra-flotante);
+    backdrop-filter: var(--vidrio-desenfoque);
+    -webkit-backdrop-filter: var(--vidrio-desenfoque);
+    cursor: pointer;
+    transition: opacity 0.3s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+#btn-resultados.oculto { transform: translateY(8px); }
+#btn-resultados:hover { transform: translateY(-3px); border-color: var(--musgo); }
+#btn-resultados svg { width: 20px; height: 20px; fill: none; stroke: var(--musgo); stroke-width: 1.8; stroke-linecap: round; }
+
+#badge-ia {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ambar);
+    border: 2px solid var(--abismo);
+    box-shadow: 0 0 12px rgba(233, 173, 82, 0.9);
+}
+
+#panel-chat-ia {
+    position: absolute;
+    bottom: 172px;                       /* sube 60 px para dejar sitio al botón de resultados que está sobre el principal */
+    right: var(--espacio-6);
+    z-index: 49;
+    width: 390px;
+    max-height: 520px;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radio-hoja);
+    background: var(--vidrio-oscuro);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#panel-chat-ia.oculto { transform: translateY(16px); }
+
+.header-chat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--espacio-4) var(--espacio-4) var(--espacio-4) var(--espacio-5);
+    border-bottom: 1px solid var(--vidrio-borde);
+}
+.header-chat h3 { margin: 0; font-size: 1rem; font-weight: 500; letter-spacing: 0.01em; }
+.cuerpo-chat { padding: var(--espacio-5); overflow-y: auto; color: var(--texto-suave); font-size: 0.95rem; line-height: 1.65; }
+.cuerpo-chat p { margin: 0; }
+
+/* --------------------------------------------------------------------------
+   6. OVERLAYS (pantallas completas de vidrio)
+   -------------------------------------------------------------------------- */
+.overlay-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    padding: var(--espacio-6) var(--espacio-7);
+    overflow-y: auto;
+    background: radial-gradient(70% 60% at 15% 0%, rgba(28, 154, 104, 0.22) 0%, transparent 70%), rgba(5, 13, 10, 0.82);
+    backdrop-filter: blur(30px) saturate(130%);
+    -webkit-backdrop-filter: blur(30px) saturate(130%);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.header-overlay {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--espacio-5);
+    padding-bottom: var(--espacio-4);
+    border-bottom: 1px solid var(--vidrio-borde);
+}
+.header-overlay h2 {
+    margin: 0;
+    font-family: var(--fuente-titulo);
+    font-weight: 400;
+    font-size: clamp(1.9rem, 3vw, 2.6rem);
+    letter-spacing: -0.01em;
+}
+
+.btn-cerrar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--vidrio-borde);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--texto-suave);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.btn-cerrar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+.btn-cerrar:hover { background: rgba(229, 138, 120, 0.16); color: var(--coral); transform: rotate(90deg); }
+
+/* Tarjeta de vidrio genérica para los contenidos de los overlays */
+.tarjeta-vidrio {
+    padding: var(--espacio-6);
+    border-radius: var(--radio-hoja);
+    background: var(--vidrio-oscuro);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--vidrio-brillo), var(--sombra-flotante);
+}
+.hoja-centrada { width: 100%; max-width: 640px; margin: 0 auto; }
+.texto-ayuda { margin: 0 0 var(--espacio-5); color: var(--texto-suave); line-height: 1.6; font-size: 0.95rem; }
+.subtitulo { margin: var(--espacio-5) 0 0; padding-bottom: var(--espacio-3); font-size: 1rem; font-weight: 500; border-bottom: 1px solid var(--vidrio-borde); }
+.fila-agregar { display: flex; gap: var(--espacio-3); }
+
+/* --------------------------------------------------------------------------
+   7. FORMULARIOS Y BOTONES
+   -------------------------------------------------------------------------- */
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 13px var(--espacio-4);
+    border-radius: var(--radio-control);
+    border: 1px solid var(--vidrio-borde);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--texto);
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+input::placeholder { color: var(--texto-tenue); }
+input:focus, select:focus {
+    border-color: rgba(134, 211, 108, 0.6);
+    background-color: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 4px rgba(134, 211, 108, 0.12);
+}
+/* Flecha propia para los select (la nativa desentona con el resto del diseño) */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 42px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a7bcb0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+select option { background: var(--bosque); color: var(--texto); }
+input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18px; flex: none; cursor: pointer; }
+
+.btn-accion {
+    width: 100%;
+    padding: 14px var(--espacio-5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radio-pildora);
+    background: var(--gradiente-acento);
+    color: var(--texto-sobre-acento);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    box-shadow: var(--vidrio-brillo), 0 10px 28px -10px rgba(28, 154, 104, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-accion:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: var(--vidrio-brillo), 0 16px 32px -10px rgba(134, 211, 108, 0.7); }
+.btn-accion svg { width: 16px; height: 16px; margin-right: 6px; vertical-align: -2px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+.btn-agregar-hab { width: auto; flex: none; }
+
+.etiqueta { display: block; margin-bottom: var(--espacio-2); font-size: 0.88rem; color: var(--texto-suave); }
+
+/* --------------------------------------------------------------------------
+   8. LISTAS
+   -------------------------------------------------------------------------- */
+.lista-elegante { display: flex; flex-direction: column; gap: var(--espacio-2); margin-top: var(--espacio-4); }
+
+.item-lista, .item-lista-agregado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-control);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.92rem;
+}
+.item-lista { border-left: 3px solid var(--esmeralda); }
+.item-lista-agregado .ubicacion { margin-left: var(--espacio-2); color: var(--texto-tenue); font-size: 0.82rem; }
+
+.btn-eliminar-small, .btn-eliminar-aparato {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--texto-tenue);
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.btn-eliminar-small:hover, .btn-eliminar-aparato:hover { background: rgba(229, 138, 120, 0.16); color: var(--coral); }
+
+.vacio { color: var(--texto-tenue); font-size: 0.85rem; font-style: italic; }
+
+/* --------------------------------------------------------------------------
+   9. CATÁLOGO
+   -------------------------------------------------------------------------- */
+.layout-catalogo { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: var(--espacio-4); }
+
+.filtros-container { display: flex; gap: var(--espacio-3); }
+.campo-busqueda { position: relative; flex: 2; }
+.campo-busqueda svg { position: absolute; left: var(--espacio-4); top: 50%; width: 18px; height: 18px; transform: translateY(-50%); stroke: var(--texto-tenue); fill: none; stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+.campo-busqueda input { padding-left: 46px; }
+.filtros-container input, .filtros-container select { border-radius: var(--radio-pildora); padding-top: 14px; padding-bottom: 14px; }
+.filtros-container select { flex: 1; padding-left: var(--espacio-5); cursor: pointer; }
+
+.layout-catalogo-columnas { display: flex; gap: var(--espacio-6); flex: 1; min-height: 0; }
+
+.grid-catalogo-scroll {
+    flex: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    grid-auto-rows: max-content;
+    align-content: flex-start;
+    gap: var(--espacio-4);
+    padding: var(--espacio-1) var(--espacio-3) var(--espacio-4) var(--espacio-1);
+    overflow-y: auto;
+}
+
+.carta-dispositivo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--espacio-2);
+    padding: var(--espacio-5) var(--espacio-4);
+    overflow: hidden;
+    text-align: center;
+    cursor: pointer;
+    border-radius: var(--radio-tarjeta);
+    background: var(--vidrio-relleno);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--vidrio-brillo);
+    transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+.carta-dispositivo:hover { transform: translateY(-3px); border-color: rgba(134, 211, 108, 0.35); }
+.carta-dispositivo h4 { margin: 0; font-size: 0.95rem; font-weight: 500; line-height: 1.25; }
+.carta-seleccionada {
+    border-color: rgba(134, 211, 108, 0.75);
+    background: linear-gradient(145deg, rgba(28, 154, 104, 0.30) 0%, rgba(12, 74, 52, 0.18) 100%);
+    box-shadow: var(--vidrio-brillo), 0 0 0 4px rgba(134, 211, 108, 0.10), 0 16px 36px -14px rgba(28, 154, 104, 0.7);
+}
+
+.checkmark-seleccion {
+    position: absolute;
+    top: var(--espacio-3);
+    right: var(--espacio-3);
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--gradiente-acento);
+    color: var(--texto-sobre-acento);
+    font-size: 0.78rem;
+    font-weight: 700;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+.carta-seleccionada .checkmark-seleccion { opacity: 1; visibility: visible; }
+
+/* Panel que sube al pasar el mouse y muestra marcas y consumos */
+.hover-info {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--espacio-2);
+    padding: var(--espacio-4);
+    background: linear-gradient(160deg, rgba(10, 36, 26, 0.96), rgba(5, 13, 10, 0.97));
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.carta-dispositivo:hover .hover-info { opacity: 1; transform: translateY(0); }
+.hover-info .marcas-texto { margin-bottom: var(--espacio-1); font-size: 0.78rem; line-height: 1.4; color: var(--texto-suave); }
+.hover-info .potencia-info { font-size: 0.85rem; font-weight: 500; color: var(--musgo); }
+.hover-info .standby-info { font-size: 0.85rem; font-weight: 500; color: var(--ambar); }
+
+/* Foto real (o emoji de respaldo) de cada dispositivo. Las fotos tienen fondo blanco,
+   así que se dibujan sobre un recuadro blanco para que no se note su borde. */
+.img-placeholder, .img-dispositivo {
+    width: 100%;
+    height: 112px;
+    margin-bottom: var(--espacio-1);
+    border-radius: 14px;
+    border: 1px solid var(--vidrio-borde);
+}
+.img-placeholder { display: flex; justify-content: center; align-items: center; font-size: 2.6rem; background: radial-gradient(circle at 35% 30%, rgba(134, 211, 108, 0.22), rgba(5, 13, 10, 0.55)); }
+.img-dispositivo { object-fit: contain; padding: 6px; background: #fff; }
+
+/* Vista del dispositivo elegido, arriba del formulario */
+#vista-seleccion { display: flex; flex-direction: column; gap: var(--espacio-2); }
+#vista-seleccion .img-placeholder, #vista-seleccion .img-dispositivo { height: 96px; margin-bottom: 0; }
+.marcas-seleccion, .consumos-seleccion, .fuente-dato { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--texto-suave); }
+.consumos-seleccion { display: flex; gap: var(--espacio-4); font-weight: 500; }
+.consumos-seleccion .potencia-info { color: var(--musgo); }
+.consumos-seleccion .standby-info { color: var(--ambar); }
+.fuente-dato a { color: var(--musgo); }
+.nota-uso { display: block; margin-top: var(--espacio-1); font-size: 0.78rem; color: var(--texto-suave); }
+
+.config-dispositivo {
+    flex: 1;
+    min-width: 300px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--espacio-3);
+    padding: var(--espacio-5);
+    overflow-y: auto;
+    border-radius: var(--radio-hoja);
+    background: var(--vidrio-oscuro);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--vidrio-brillo), var(--sombra-flotante);
+}
+.config-dispositivo h3 { margin: 0; padding-bottom: var(--espacio-3); border-bottom: 1px solid var(--vidrio-borde); font-family: var(--fuente-titulo); font-weight: 400; font-size: 1.6rem; line-height: 1.15; }
+.nota-fija { display: none; margin: 0; padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio-control); background: rgba(28, 154, 104, 0.14); color: var(--texto-suave); font-size: 0.85rem; line-height: 1.5; }
+.campo-formulario { margin-top: var(--espacio-3); }
+.fila-check { display: flex; align-items: center; gap: var(--espacio-3); margin-top: var(--espacio-3); }
+.fila-check label { margin: 0; cursor: pointer; font-size: 0.92rem; }
+.fila-check.separada { padding-top: var(--espacio-3); border-top: 1px solid var(--vidrio-borde); }
+.fila-check.separada label { color: var(--ambar); }
+.titulo-instalados { margin: var(--espacio-1) 0 0; font-size: 0.9rem; font-weight: 500; color: var(--texto-suave); }
+
+/* La lista ocupa todo el espacio que sobra en el panel y hace scroll solo si hace falta */
+#lista-dispositivos-agregados {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 170px;
+    min-height: 170px;
+    gap: var(--espacio-2);
+    overflow-y: auto;
+}
+
+/* --------------------------------------------------------------------------
+   10. PLANO DE LA CASA Y PANEL DE RESULTADOS
+   -------------------------------------------------------------------------- */
+/* Panel de resultados. Jerarquía: 1) el ahorro (lo único que el usuario puede cambiar), 2) datos de apoyo en una fila discreta,
+   3) el ranking de vampiros como lista ordenada. Sin tarjetas: las líneas finas separan, no hay cajas repetidas. */
+.hoja-resultados { width: 100%; max-width: 1000px; margin: 0 auto; }
+.hoja-resultados .subtitulo { margin-top: 0; }
+
+.ahorro-resultados { padding-bottom: var(--espacio-6); }
+.mensaje-ahorro { max-width: 46ch; margin: 0 0 var(--espacio-3); font-size: 1.05rem; line-height: 1.5; color: var(--texto-suave); }
+.cifras-ahorro { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--espacio-7); row-gap: var(--espacio-2); }
+.cifras-ahorro p { margin: 0; font-family: var(--fuente-titulo); font-weight: 400; line-height: 1; letter-spacing: -0.02em; }
+.cifras-ahorro small { font-family: var(--fuente-ui); font-size: 1rem; font-weight: 400; letter-spacing: 0; color: var(--texto-suave); }
+.ahorro-mes { font-size: clamp(3.8rem, 9vw, 7.5rem); color: var(--musgo); }   /* la cifra protagonista */
+.ahorro-anio { font-size: clamp(2rem, 4vw, 3.4rem); color: var(--texto); }
+.sin-ahorro .cifras-ahorro { opacity: 0.35; }                                   /* sin vampiros las cifras se apagan */
+
+.datos-resultados {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 0 var(--espacio-7);
+    padding: var(--espacio-4) 0;
+    border-block: 1px solid var(--vidrio-borde);
+}
+.datos-resultados > div { padding: 0 var(--espacio-6); }
+.datos-resultados > div:first-child { padding-left: 0; }
+.datos-resultados > div + div { border-left: 1px solid var(--vidrio-borde); }
+.datos-resultados dt { margin-bottom: var(--espacio-1); font-size: 0.85rem; color: var(--texto-tenue); }
+.datos-resultados dd { margin: 0; font-size: 1.35rem; font-weight: 300; font-variant-numeric: tabular-nums; }
+
+.lista-vampiros { margin: 0; padding: 0; list-style: none; }
+.fila-vampiro {
+    display: grid;
+    grid-template-columns: 2rem minmax(10rem, 15rem) 1fr 5rem;
+    align-items: center;
+    gap: var(--espacio-4);
+    padding: var(--espacio-3) 0;
+    border-bottom: 1px solid var(--vidrio-borde);
+}
+.puesto-vampiro { font-family: var(--fuente-titulo); font-size: 1.5rem; line-height: 1; color: var(--texto-tenue); }
+.nombre-vampiro { display: flex; flex-direction: column; line-height: 1.35; }
+.nombre-vampiro strong { font-weight: 500; }
+.nombre-vampiro small { font-size: 0.8rem; color: var(--texto-tenue); }
+.barra-vampiro { display: block; height: 4px; border-radius: var(--radio-pildora); background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.relleno-vampiro { display: block; height: 100%; border-radius: var(--radio-pildora); background: var(--ambar); }   /* el ámbar queda solo para los vampiros */
+.watts-vampiro { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ambar); }
+
+.plano-casa { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-5); width: 100%; max-width: 1200px; margin: 0 auto; }
+
+.habitacion-grid {
+    position: relative;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    padding: var(--espacio-5);
+    border-radius: var(--radio-hoja);
+    background: var(--vidrio-oscuro);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--vidrio-brillo), var(--sombra-flotante);
+}
+/* Filo de color arriba de cada habitación */
+.habitacion-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--espacio-5);
+    right: var(--espacio-5);
+    height: 2px;
+    background: linear-gradient(90deg, var(--musgo), var(--esmeralda), transparent);
+    border-radius: 0 0 2px 2px;
+}
+.habitacion-grid h3 { margin: 0 0 var(--espacio-4); font-size: 1.05rem; font-weight: 500; color: var(--texto); }
+
+.grid-items { display: flex; flex-wrap: wrap; gap: var(--espacio-3); align-content: flex-start; flex: 1; }
+
+.icono-aparato {
+    position: relative;
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-control);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 3px solid;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.icono-aparato:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.08); }
+.icono-aparato strong { padding-right: 22px; font-size: 0.9rem; font-weight: 500; }
+.icono-aparato span { font-size: 0.78rem; color: var(--texto-suave); }
+.borde-desconectable { border-left-color: var(--ambar); }
+.borde-fijo { border-left-color: var(--niebla); }
+.btn-eliminar-aparato { position: absolute; top: 6px; right: 6px; }
+
+.status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; }
+.dot-on { background-color: var(--ambar); box-shadow: 0 0 8px var(--ambar); }   /* en standby: está gastando */
+.dot-off { background-color: var(--musgo); box-shadow: 0 0 8px var(--musgo); }  /* apagado: sin fuga */
+
+/* --------------------------------------------------------------------------
+   11. ADAPTACIÓN A PANTALLAS PEQUEÑAS
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+    .ayuda-movimiento { display: none; }          /* en pantallas pequeñas no hay teclado */
+    .overlay-panel { padding: var(--espacio-5) var(--espacio-4); }
+    .layout-catalogo-columnas { flex-direction: column; overflow-y: auto; }
+    .grid-catalogo-scroll { flex: none; overflow: visible; }
+    .config-dispositivo { flex: none; min-width: 0; max-height: none; }
+    .plano-casa { grid-template-columns: 1fr; }
+    .filtros-container { flex-direction: column; }
+
+    /* El dock pasa a una barra horizontal bajo el título */
+    .dock { top: 88px; left: 50%; right: auto; width: auto; flex-direction: row; transform: translateX(-50%); }
+    .dock-btn { padding: var(--espacio-3); }
+    .dock-btn span { display: none; }
+    .titulo-vista { top: var(--espacio-5); transform: none; }   /* sin espacio de sobra: el logo vuelve arriba */
+    #btn-chat-ia { width: 56px; padding: 0; }                   /* solo el ícono */
+    #txt-btn-ia { display: none; }
+
+    #reloj-simulacion { --ancho-reloj: 180px; --alto-cielo: 84px; --altura-arco: 64px; --tamano-astro: 26px; top: 150px; right: 50%; transform: translateX(50%); }
+    #contadores-tiempo-real { bottom: var(--espacio-4); width: calc(100% - 32px); }
+    .caja-contador { min-width: 0; flex: 1; padding: var(--espacio-2) var(--espacio-4); }
+    .caja-contador .label { font-size: 0.85rem; }
+    .caja-contador .valor { font-size: 1.9rem; }
+    #btn-chat-ia { bottom: 108px; right: var(--espacio-4); width: 56px; height: 56px; }
+    #btn-resultados { bottom: 176px; right: var(--espacio-4); width: 48px; padding: 0; justify-content: center; }   /* solo el ícono, sobre el botón principal */
+    #btn-resultados span { display: none; }
+    #panel-chat-ia { right: var(--espacio-4); bottom: 236px; width: calc(100% - 32px); max-height: 55vh; }
+    .datos-resultados > div { padding: var(--espacio-2) var(--espacio-5) var(--espacio-2) 0; }   /* al apilarse, ya no hay separadores verticales */
+    .datos-resultados > div + div { border-left: none; }
+    .fila-vampiro { grid-template-columns: 1.5rem 1fr auto; }
+    .barra-vampiro { grid-column: 2 / 4; grid-row: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.01ms !important; }
+    .carta-dispositivo:hover, .icono-aparato:hover, .btn-accion:hover, #btn-chat-ia:hover, #btn-resultados:hover { transform: none; }
+    .flechas-entrar svg { animation: none; opacity: 0.8; }   /* flechas quietas para quien prefiere menos movimiento */
+}
