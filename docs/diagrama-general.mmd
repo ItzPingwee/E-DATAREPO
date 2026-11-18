@@ -1,0 +1,56 @@
+%% Diagrama general de E-DATA (arquitectura de 3 capas + flujo de una simulación)
+%% Pegar tal cual en https://mermaid.live
+%% Nota: las flechas entre capas van de subgrafo a subgrafo a propósito. Si una flecha
+%% sale de un nodo interno, Mermaid ignora el "direction TB" del subgrafo y lo aplana.
+flowchart LR
+    U(["👤 Usuario"])
+
+    subgraph C1["CAPA 1 · Frontend — HTML + CSS + JS vanilla"]
+        direction TB
+        P["Portada<br/><i>portada.js</i>"]
+        M["Modelar casa<br/>hasta 6 habitaciones"]
+        CAT["Agregar dispositivos<br/>catálogo de 86 equipos<br/>variable · ciclo · continuo<br/><i>catalogo.js</i>"]
+        CASA["Casa isométrica + avatar<br/>zoom, arrastre, camino BFS<br/><i>casa2d.js</i>"]
+        BTN["Botón «Simular día»<br/><i>app.js</i>"]
+        RELOJ["Día de 24 h en 2 min<br/>reloj sol/luna + contadores"]
+        PANEL["Panel de resultados<br/>ahorro mes/año · consumo · ranking"]
+        CHAT["Chat del AI Analyst<br/>recomendación en lenguaje natural"]
+        P --> M --> CAT --> CASA --> BTN --> RELOJ --> PANEL --> CHAT
+    end
+
+    subgraph C2["CAPA 2 · Backend — Python + FastAPI"]
+        direction TB
+        VAL["Validación con Pydantic<br/>tipos incorrectos → HTTP 422"]
+        ARB["Árbol N-ario<br/>Casa → Habitaciones → Dispositivos"]
+        CALC["Consumo por dispositivo · O(n)<br/>kWh activo + kWh standby · δ<br/>× tarifa 875,04 COP/kWh"]
+        HEAP["Cola de prioridad max-heap<br/>(heapq con vatios negados)<br/>vampiros por W standby · O(v log v)"]
+        FIN["Costo día y mes (×30)<br/>ahorro mensual · presupuesto diario"]
+        PROMPT["Prompt unificado<br/>cifras deterministas, sin alucinar"]
+        PROXY["Endpoint /api/ia<br/>cliente compatible con OpenAI"]
+        VAL --> ARB --> CALC --> HEAP --> FIN --> PROMPT --> PROXY
+    end
+
+    subgraph C3["CAPA 3 · IA local — LM Studio"]
+        direction TB
+        GEMMA["Gemma 4 E4B cuantizado<br/>rol «AI Analyst de E-DATA»<br/>T = 0,6 · 100 % on-premise"]
+    end
+
+    U <-- "1 · arma su casa<br/>7 · ve el ahorro y decide<br/>qué desconectar" --> C1
+    C1 <-- "2 · POST /api/simular (JSON)<br/>3 · kWh, COP, ahorro, ranking, prompt<br/>4 · POST /api/ia → mensaje_ia" --> C2
+    C2 <-- "5 · /v1/chat/completions<br/>6 · consejo en texto" --> C3
+
+    classDef usuario fill:#fff4dc,stroke:#c98a16,stroke-width:2px,color:#3d2a00
+    classDef front fill:#e6f5e0,stroke:#3f8f2c,color:#14320c
+    classDef back fill:#e3eef7,stroke:#2f6690,color:#0e2a40
+    classDef ia fill:#f1e6f7,stroke:#7a3f9c,color:#2e1040
+    classDef clave fill:#fff4dc,stroke:#c98a16,stroke-width:2px,color:#3d2a00
+
+    class U usuario
+    class P,M,CAT,CASA,BTN,RELOJ,PANEL,CHAT front
+    class VAL,ARB,CALC,FIN,PROMPT,PROXY back
+    class HEAP clave
+    class GEMMA ia
+
+    style C1 fill:#f7fbf5,stroke:#3f8f2c,stroke-width:2px
+    style C2 fill:#f5f9fc,stroke:#2f6690,stroke-width:2px
+    style C3 fill:#faf5fc,stroke:#7a3f9c,stroke-width:2px
