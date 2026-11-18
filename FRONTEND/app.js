@@ -1,6 +1,27 @@
 // E-DATA — estado global, interfaz y conexión con el backend
 // ----------------------------------------------------
-// 1. BASE DE DATOS Y ESTADO GLOBAL
+// 1. ESTADO GLOBAL
+// ----------------------------------------------------
+let habitacionesCreadas = ["Sala", "Cocina", "Habitación Principal", "Baño"];
+let casaUsuario = { "Sala": [], "Cocina": [], "Habitación Principal": [], "Baño": [] };
+
+// Duración de un día simulado (24 h): 2 minutos. Reloj, contadores y ciclo día/noche usan este mismo valor.
+const DURACION_SIMULACION_MS = 120000;
+
+// Dirección del backend (FastAPI). Está en un solo sitio para no repetirla en cada petición.
+const URL_BACKEND = 'http://127.0.0.1:8000';
+
+let idSeleccionado = 0;      // id (en catalogoExcel) del dispositivo elegido en el catálogo
+let estadoBotonFlotante = 'IDLE';
+let numeroSimulacion = 0;   // cuenta las simulaciones: así una animación vieja no muestra el botón de resultados de otra
+
+window.onload = () => {
+    actualizarTodoElUI();
+    filtrarCatalogo();
+};
+
+// ----------------------------------------------------
+// 2. PANELES Y BOTÓN PRINCIPAL
 // ----------------------------------------------------
 function toggleOverlay(id) { document.getElementById(id).classList.toggle('oculto'); }
 
@@ -20,27 +41,14 @@ function ponerEstadoBotonIA(estado) {
     if (estado === 'IDLE') document.getElementById('btn-resultados').classList.add('oculto');
 }
 
-
-let habitacionesCreadas = ["Sala", "Cocina", "Habitación Principal", "Baño"]; 
-let casaUsuario = { "Sala": [], "Cocina": [], "Habitación Principal": [], "Baño": [] }; 
-
-// Duración de un día simulado (24 h): 2 minutos. Reloj, contadores y ciclo día/noche usan este mismo valor.
-const DURACION_SIMULACION_MS = 120000;
-
-let indexSeleccionado = 0;
-let estadoBotonFlotante = 'IDLE';
-let numeroSimulacion = 0;   // cuenta las simulaciones: así una animación vieja no muestra el botón de resultados de otra
-
-window.onload = () => { 
-    actualizarTodoElUI(); 
-    filtrarCatalogo(); 
-};
-
+// ----------------------------------------------------
+// 3. HABITACIONES
+// ----------------------------------------------------
 function agregarHabitacion() {
     const input = document.getElementById('input-nueva-hab');
     const nombre = input.value.trim();
     if(nombre === "") return;
-    
+
     if (habitacionesCreadas.length >= MAX_HABITACIONES) {
         alert(`Tu casa puede tener hasta ${MAX_HABITACIONES} habitaciones para que se siga viendo completa.`);
         return;
@@ -58,9 +66,9 @@ function agregarHabitacion() {
 
 function eliminarHabitacion(nombre) {
     habitacionesCreadas = habitacionesCreadas.filter(h => h !== nombre);
-    delete casaUsuario[nombre]; 
+    delete casaUsuario[nombre];
     actualizarTodoElUI();
-    
+
     ponerEstadoBotonIA('IDLE');
 }
 
@@ -84,16 +92,29 @@ function actualizarTodoElUI() {
     const plano = document.getElementById('plano-grid-dinamico');
     plano.innerHTML = '';
     habitacionesCreadas.forEach(hab => {
-        const safeId = 'grid-' + hab.replace(/\s+/g, '-');
         plano.innerHTML += `
             <div class="habitacion-grid">
                 <h3>${hab}</h3>
-                <div class="grid-items" id="${safeId}"></div>
+                <div class="grid-items" id="${idDeHabitacion(hab)}"></div>
             </div>`;
     });
 
-    renderizarCasa(); 
+    renderizarCasa();
     renderizarListaAgregadosEnCatalogo();
+}
+
+// id HTML de la tarjeta de una habitación en «Mis dispositivos»: "Habitación Principal" -> "grid-Habitación-Principal"
+// (un id no puede llevar espacios). Lo usan actualizarTodoElUI y renderizarCasa, así que vive en un solo sitio.
+function idDeHabitacion(hab) {
+    return 'grid-' + hab.replace(/\s+/g, '-');
+}
+
+// Después de instalar o quitar un dispositivo: se redibujan la casa y la lista, y el botón vuelve a "Simular día"
+// porque los resultados anteriores ya no corresponden a la casa.
+function casaCambio() {
+    renderizarCasa();
+    renderizarListaAgregadosEnCatalogo();
+    ponerEstadoBotonIA('IDLE');
 }
 
 // HTML de la foto de un dispositivo. Si no tiene foto (o el archivo no carga) se muestra su emoji.
@@ -125,17 +146,17 @@ function filtrarCatalogo() {
         const matchZona = (zonaSelec === "Todas" || item.zona === zonaSelec);
 
         if (matchTexto && matchZona) {
-            const claseSeleccion = item.id === indexSeleccionado ? 'carta-seleccionada' : '';
+            const claseSeleccion = item.id === idSeleccionado ? 'carta-seleccionada' : '';
             const imagenVisual = htmlImagenDispositivo(item);
 
             grid.innerHTML += `
                 <div class="carta-dispositivo ${claseSeleccion}" onclick="seleccionarDispositivo(${item.id})">
                     <div class="checkmark-seleccion">✓</div>
-                    
+
                     ${imagenVisual}
-                    
+
                     <h4>${item.nombre}</h4>
-                    
+
                     <!-- INFO DETALLADA EN HOVER -->
                     <div class="hover-info">
                         <span class="marcas-texto"><strong>Marcas:</strong><br>${item.marcas}</span>
@@ -150,7 +171,7 @@ function filtrarCatalogo() {
 }
 
 function seleccionarDispositivo(id) {
-    indexSeleccionado = id;
+    idSeleccionado = id;
     // Al elegir un dispositivo, la habitación de destino se ajusta a su zona (una nevera -> Cocina)
     const aparato = catalogoExcel.find(item => item.id === id);
     sincronizarHabitacionConZona(aparato.zona);
@@ -210,8 +231,14 @@ function cambiarFiltroZona() {
     filtrarCatalogo();
 }
 
+// Texto que explica por qué los equipos 'ciclo' y 'continuo' no piden minutos de uso
+const TEXTO_TIPO_FIJO = {
+    ciclo: "Motor cíclico: funciona ~30% del día en modo automático.",
+    continuo: "Equipo continuo: requiere conexión 24 h activa."
+};
+
 function actualizarFormularioUI() {
-    const aparato = catalogoExcel.find(item => item.id === indexSeleccionado);
+    const aparato = catalogoExcel.find(item => item.id === idSeleccionado);
     if (!aparato) return;
 
     document.getElementById('txt-nombre-seleccion').innerText = `Configurando: ${aparato.nombre}`;
@@ -219,25 +246,20 @@ function actualizarFormularioUI() {
     document.getElementById('txt-uso-tipico').textContent = aparato.minutos_tipicos
         ? `Uso típico estimado: ${formatearMinutos(aparato.minutos_tipicos)} al día`
         : '';
-    const divMin = document.getElementById('div-minutos');
-    const divCon = document.getElementById('div-conexion');
-    const txtInfo = document.getElementById('txt-info-fija');
-    const chkDesc = document.getElementById('check-desconectable');
 
-    if (aparato.tipo === "variable") {
-        divMin.style.display = "block"; divCon.style.display = "flex"; txtInfo.style.display = "none";
-        chkDesc.checked = true;
-    } else if (aparato.tipo === "ciclo") {
-        divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-        txtInfo.innerHTML = "Motor cíclico: funciona ~30% del día en modo automático.";
-        chkDesc.checked = false;
-    } else {
-        divMin.style.display = "none"; divCon.style.display = "none"; txtInfo.style.display = "block";
-        txtInfo.innerHTML = "Equipo continuo: requiere conexión 24 h activa.";
-        chkDesc.checked = false;
-    }
+    // Solo los de uso 'variable' piden minutos y si se dejan enchufados; los otros dos tipos muestran un texto fijo
+    const esVariable = aparato.tipo === "variable";
+    const txtInfo = document.getElementById('txt-info-fija');
+    document.getElementById('div-minutos').style.display = esVariable ? "block" : "none";
+    document.getElementById('div-conexion').style.display = esVariable ? "flex" : "none";
+    txtInfo.style.display = esVariable ? "none" : "block";
+    if (!esVariable) txtInfo.textContent = TEXTO_TIPO_FIJO[aparato.tipo];
+    document.getElementById('check-desconectable').checked = esVariable;
 }
 
+// ----------------------------------------------------
+// 4. DISPOSITIVOS INSTALADOS
+// ----------------------------------------------------
 function instalarDispositivo() {
     if (habitacionesCreadas.length === 0) {
         alert("Primero debes modelar tu casa y crear al menos una habitación.");
@@ -245,7 +267,7 @@ function instalarDispositivo() {
     }
 
     const hab = document.getElementById('select-habitacion').value;
-    const aparato = catalogoExcel.find(item => item.id === indexSeleccionado);
+    const aparato = catalogoExcel.find(item => item.id === idSeleccionado);
     let hrs = 0, conectado = true;
 
     if (aparato.tipo === "variable") {
@@ -260,25 +282,19 @@ function instalarDispositivo() {
         nombre: aparato.nombre, icono: aparato.icono, watts_activos: aparato.watts_activos, watts_standby: aparato.watts_standby,
         horas_uso: hrs, dejado_conectado: conectado, desconectable: document.getElementById('check-desconectable').checked
     });
-
-    renderizarCasa();
-    renderizarListaAgregadosEnCatalogo();
-    ponerEstadoBotonIA('IDLE');
+    casaCambio();
 }
 
 function eliminarDispositivo(hab, indexAparato) {
     casaUsuario[hab].splice(indexAparato, 1);
-    renderizarCasa();
-    renderizarListaAgregadosEnCatalogo();
-    
-    ponerEstadoBotonIA('IDLE');
+    casaCambio();
 }
 
 function renderizarListaAgregadosEnCatalogo() {
     const lista = document.getElementById('lista-dispositivos-agregados');
     lista.innerHTML = '';
     let contadorTotal = 0;
-    
+
     for (const [hab, aparatos] of Object.entries(casaUsuario)) {
         aparatos.forEach((ap, index) => {
             contadorTotal++;
@@ -292,11 +308,25 @@ function renderizarListaAgregadosEnCatalogo() {
     if(contadorTotal === 0) lista.innerHTML = `<span class="vacio">Aún no has agregado dispositivos.</span>`;
 }
 
+// ----------------------------------------------------
+// 5. SIMULACIÓN Y CONEXIÓN CON EL BACKEND
+// ----------------------------------------------------
+// Envía 'datos' en JSON a una ruta del backend (POST) y devuelve la respuesta ya convertida a objeto.
+// Las dos peticiones de la app (/api/simular y /api/ia) se hacen igual, por eso viven en una sola función.
+async function enviarAlBackend(ruta, datos) {
+    const respuesta = await fetch(URL_BACKEND + ruta, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+    });
+    if (!respuesta.ok) throw new Error("Error en servidor local.");
+    return respuesta.json();
+}
 
 async function manejarClickBotonFlotante() {
     let totalEquipos = 0;
     for (let h in casaUsuario) totalEquipos += casaUsuario[h].length;
-    
+
     if (totalEquipos === 0) {
         alert("Para simular, primero debes instalar al menos un dispositivo en tu casa.");
         return;
@@ -308,7 +338,7 @@ async function manejarClickBotonFlotante() {
 
 function abrirChatIA() {
     document.getElementById('panel-chat-ia').classList.remove('oculto');
-    document.getElementById('badge-ia').classList.add('oculto'); 
+    document.getElementById('badge-ia').classList.add('oculto');
 }
 
 function cerrarChatIA() { document.getElementById('panel-chat-ia').classList.add('oculto'); }
@@ -321,13 +351,13 @@ async function ejecutarMotorTotal() {
     const payload = { habitaciones: Object.entries(casaUsuario).map(([hab, disp]) => ({ nombre: hab, dispositivos: disp })) };
 
     try {
-        const resMath = await fetch('http://127.0.0.1:8000/api/simular', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!resMath.ok) throw new Error("Error en servidor local.");
-        const datos = await resMath.json();
+        const datos = await enviarAlBackend('/api/simular', payload);
 
-        document.getElementById('panel-vista').style.animation = "none";
-        void document.getElementById('panel-vista').offsetWidth; 
-        document.getElementById('panel-vista').style.animation = `cicloDiaNoche ${DURACION_SIMULACION_MS / 1000}s ease-in-out forwards`;
+        // Reinicia la animación del ciclo día/noche: quitarla, forzar que el navegador lo note (offsetWidth) y ponerla otra vez
+        const panelVista = document.getElementById('panel-vista');
+        panelVista.style.animation = "none";
+        void panelVista.offsetWidth;
+        panelVista.style.animation = `cicloDiaNoche ${DURACION_SIMULACION_MS / 1000}s ease-in-out forwards`;
         // Al terminar el día simulado (2 min) aparece el botón del panel de resultados. No espera a la IA, que es lenta.
         animarContadoresTiempoReal(datos.consumo_total_kwh, datos.costo_simulado_cop, () => {
             const sigueVigente = miSimulacion === numeroSimulacion && estadoBotonFlotante !== 'IDLE';
@@ -337,12 +367,11 @@ async function ejecutarMotorTotal() {
         });
 
         document.getElementById('mensaje-ia-texto').innerText = "Gemma 4 está analizando tus datos...";
-        const resIA = await fetch('http://127.0.0.1:8000/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt_texto: datos.prompt_generado }) });
-        const datosIA = await resIA.json();
+        const datosIA = await enviarAlBackend('/api/ia', { prompt_texto: datos.prompt_generado });
         document.getElementById('mensaje-ia-texto').innerText = datosIA.mensaje_ia;
-        
+
         ponerEstadoBotonIA('LISTO');
-    } catch (error) { 
+    } catch (error) {
         alert(error.message);
         ponerEstadoBotonIA('IDLE');
     }
@@ -363,6 +392,12 @@ function actualizarCielo(minutosSimulados) {
     reloj.style.setProperty('--x', x.toFixed(3));       // el CSS usa estas variables para colocar el astro
     reloj.style.setProperty('--y', y.toFixed(3));
     reloj.classList.toggle('es-dia', esDia);
+}
+
+// Escribe la hora del reloj digital: 545 minutos -> "09:05"
+function formatearHora(minutos) {
+    const dosCifras = n => n.toString().padStart(2, '0');
+    return `${dosCifras(Math.floor(minutos / 60))}:${dosCifras(minutos % 60)}`;
 }
 
 // Escribe un valor en pesos colombianos: 1234567.8 -> "$1.234.568"
@@ -426,11 +461,11 @@ function animarContadoresTiempoReal(kwhFinal, copFinal, alTerminar) {
     function actualizar(tiempo) {
         let progreso = (tiempo - inicio) / DURACION_SIMULACION_MS;
         if (progreso > 1) progreso = 1;
-        let minSim = Math.floor(progreso * 1440);
-        horaDigital.innerText = `${Math.floor(minSim / 60).toString().padStart(2, '0')}:${(minSim % 60).toString().padStart(2, '0')}`;
+        const minSim = Math.floor(progreso * 1440);   // 1440 = minutos de un día
+        horaDigital.innerText = formatearHora(minSim);
         actualizarCielo(minSim);
         txtKwh.innerText = formatearKwh(progreso * kwhFinal);
-        txtCop.innerText = `$${Math.floor(progreso * copFinal).toLocaleString('es-CO')}`;
+        txtCop.innerText = formatearPesos(progreso * copFinal);
         if (progreso < 1) requestAnimationFrame(actualizar);
         else alTerminar();
     }

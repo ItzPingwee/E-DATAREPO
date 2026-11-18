@@ -17,14 +17,14 @@
     /* Fondos */
     --abismo: #050d0a;
     --bosque: #0a1a13;
-    --cielo-noche: #050d0a;      /* fondo durante la "noche" de la simulación */
+    --cielo-noche: var(--abismo);      /* fondo durante la "noche" de la simulación */
     --cielo-dia: #174a3a;        /* fondo durante el "día" de la simulación (sigue siendo un verde oscuro) */
 
     /* Verdes */
     --esmeralda-profundo: #0c4a34;
     --esmeralda: #1c9a68;
     --musgo: #86d36c;
-    --gradiente-acento: linear-gradient(135deg, #86d36c 0%, #1c9a68 100%);
+    --gradiente-acento: linear-gradient(135deg, var(--musgo) 0%, var(--esmeralda) 100%);
 
     /* Acentos funcionales */
     --ambar: #e9ad52;            /* vampiros / consumo en reposo */
@@ -68,7 +68,8 @@
 /* --------------------------------------------------------------------------
    2. BASE
    -------------------------------------------------------------------------- */
-* { box-sizing: border-box; }
+/* box-sizing para todo, y barras de scroll finas y discretas */
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: rgba(134, 211, 108, 0.28) transparent; }
 
 body {
     margin: 0;
@@ -87,8 +88,6 @@ button { font-family: inherit; }
 /* Foco visible para quien navega con teclado */
 :focus-visible { outline: 2px solid var(--musgo); outline-offset: 3px; }
 
-/* Barras de scroll finas y discretas */
-* { scrollbar-width: thin; scrollbar-color: rgba(134, 211, 108, 0.28) transparent; }
 
 .oculto { opacity: 0; visibility: hidden; pointer-events: none; }
 
@@ -147,6 +146,21 @@ button { font-family: inherit; }
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
+/* Logotipo (el de la app y el grande de la portada): en una fila E, hoja y DATA, alineados por el centro de las mayúsculas.
+   Lo común va aquí; cada uno conserva abajo solo su tamaño y su posición. */
+.titulo-vista, .logo-portada {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.1em;
+    font-family: var(--fuente-titulo);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: var(--texto);
+}
+
 .titulo-vista {
     position: absolute;
     /* La ventana está centrada, así que su borde de arriba queda en (50% − alto/2). El logo va justo en la mitad
@@ -155,28 +169,17 @@ button { font-family: inherit; }
     transform: translateY(-50%);
     left: 0;
     width: 100%;
-    margin: 0;
     text-align: center;
-    font-family: var(--fuente-titulo);
-    font-weight: 400;
     font-size: clamp(2.4rem, 4.6vw, 3.8rem);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-    color: var(--texto);
     opacity: 0.92;
     pointer-events: none;
     z-index: 3;
-    /* Logotipo en una fila: E, hoja y DATA, alineados por el centro de las mayúsculas */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.1em;
 }
 .logo-letras { display: block; line-height: 1; }
 /* La hoja hace de guion: más baja que el centro de las letras, como en el logo */
 .logo-hoja { width: 0.42em; height: auto; margin-top: 0.1em; overflow: visible; }
-.hoja-cuerpo { fill: #86d36c; }
-.hoja-nervio { fill: none; stroke: #050d0a; stroke-width: 2.2; stroke-linecap: round; }
+.hoja-cuerpo { fill: var(--musgo); }
+.hoja-nervio { fill: none; stroke: var(--abismo); stroke-width: 2.2; stroke-linecap: round; }
 
 /* --------------------------------------------------------------------------
    PORTADA: la cortina que cubre la app hasta que el usuario la levanta (portada.js)
@@ -215,19 +218,7 @@ button { font-family: inherit; }
     50%      { opacity: 1; }
 }
 
-.logo-portada {
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.1em;
-    font-family: var(--fuente-titulo);
-    font-weight: 400;
-    font-size: clamp(4.5rem, 13vw, 11rem);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-    color: var(--texto);
-}
+.logo-portada { font-size: clamp(4.5rem, 13vw, 11rem); }
 .lema-portada {
     margin: var(--espacio-4) 0 0;
     font-size: clamp(1rem, 1.6vw, 1.35rem);
@@ -466,7 +457,7 @@ button { font-family: inherit; }
 .controles-vista button:hover { color: var(--texto); background: rgba(134, 211, 108, 0.12); border-color: rgba(134, 211, 108, 0.25); }
 .controles-vista svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 /* El porcentaje es un botón discreto: al hacer clic vuelve a ver toda la casa */
-.controles-vista #nivel-zoom { width: auto; min-width: 42px; padding: 0 4px; border-radius: var(--radio-pildora); font: inherit; font-size: 0.7rem; font-variant-numeric: tabular-nums; }
+.controles-vista #nivel-zoom { width: auto; min-width: 42px; padding: 0 var(--espacio-1); border-radius: var(--radio-pildora); font: inherit; font-size: 0.7rem; font-variant-numeric: tabular-nums; }
 
 /* --------------------------------------------------------------------------
    4. DOCK DE NAVEGACIÓN, RELOJ Y CONTADORES
@@ -493,7 +484,7 @@ button { font-family: inherit; }
     gap: var(--espacio-3);
     padding: var(--espacio-3) var(--espacio-5) var(--espacio-3) var(--espacio-3);
     border: 1px solid transparent;
-    border-radius: 20px;
+    border-radius: var(--radio-tarjeta);
     background: transparent;
     color: var(--texto-suave);
     font-size: 0.95rem;
@@ -572,7 +563,7 @@ button { font-family: inherit; }
 }
 /* De día: sol dorado con resplandor */
 #reloj-simulacion.es-dia .astro {
-    background: radial-gradient(circle at 35% 30%, #fff6cf, #f6c75a 55%, #e9ad52);
+    background: radial-gradient(circle at 35% 30%, #fff6cf, #f6c75a 55%, var(--ambar));
     box-shadow: 0 0 26px 6px rgba(246, 199, 90, 0.6);
 }
 
@@ -594,7 +585,7 @@ button { font-family: inherit; }
     z-index: 10;
     display: none;                       /* app.js lo muestra al simular */
     border-radius: var(--radio-pildora);
-    padding: var(--espacio-3) var(--espacio-3);
+    padding: var(--espacio-3);
 }
 .caja-contador {
     min-width: 300px;
@@ -774,7 +765,9 @@ button { font-family: inherit; }
     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 .btn-cerrar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
-.btn-cerrar:hover { background: rgba(229, 138, 120, 0.16); color: var(--coral); transform: rotate(90deg); }
+/* Cerrar y borrar comparten el hover rojo; la X de cerrar además gira */
+.btn-cerrar:hover, .btn-eliminar-small:hover, .btn-eliminar-aparato:hover { background: rgba(229, 138, 120, 0.16); color: var(--coral); }
+.btn-cerrar:hover { transform: rotate(90deg); }
 
 /* Tarjeta de vidrio genérica para los contenidos de los overlays */
 .tarjeta-vidrio {
@@ -876,7 +869,6 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease;
 }
-.btn-eliminar-small:hover, .btn-eliminar-aparato:hover { background: rgba(229, 138, 120, 0.16); color: var(--coral); }
 
 .vacio { color: var(--texto-tenue); font-size: 0.85rem; font-style: italic; }
 
@@ -968,8 +960,7 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
 }
 .carta-dispositivo:hover .hover-info { opacity: 1; transform: translateY(0); }
 .hover-info .marcas-texto { margin-bottom: var(--espacio-1); font-size: 0.78rem; line-height: 1.4; color: var(--texto-suave); }
-.hover-info .potencia-info { font-size: 0.85rem; font-weight: 500; color: var(--musgo); }
-.hover-info .standby-info { font-size: 0.85rem; font-weight: 500; color: var(--ambar); }
+.hover-info .potencia-info, .hover-info .standby-info { font-size: 0.85rem; font-weight: 500; }
 
 /* Foto real (o emoji de respaldo) de cada dispositivo. Las fotos tienen fondo blanco,
    así que se dibujan sobre un recuadro blanco para que no se note su borde. */
@@ -988,8 +979,9 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
 #vista-seleccion .img-placeholder, #vista-seleccion .img-dispositivo { height: 96px; margin-bottom: 0; }
 .marcas-seleccion, .consumos-seleccion, .fuente-dato { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--texto-suave); }
 .consumos-seleccion { display: flex; gap: var(--espacio-4); font-weight: 500; }
-.consumos-seleccion .potencia-info { color: var(--musgo); }
-.consumos-seleccion .standby-info { color: var(--ambar); }
+/* Consumo en uso (verde) y en reposo (ámbar): mismos colores en las cartas del catálogo y en el panel del elegido */
+.potencia-info { color: var(--musgo); }
+.standby-info { color: var(--ambar); }
 .fuente-dato a { color: var(--musgo); }
 .nota-uso { display: block; margin-top: var(--espacio-1); font-size: 0.78rem; color: var(--texto-suave); }
 
@@ -1142,7 +1134,7 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
     .dock-btn { padding: var(--espacio-3); }
     .dock-btn span { display: none; }
     .titulo-vista { top: var(--espacio-5); transform: none; }   /* sin espacio de sobra: el logo vuelve arriba */
-    #btn-chat-ia { width: 56px; padding: 0; }                   /* solo el ícono */
+    #btn-chat-ia { bottom: 108px; right: var(--espacio-4); width: 56px; height: 56px; padding: 0; }   /* solo el ícono */
     #txt-btn-ia { display: none; }
 
     #reloj-simulacion { --ancho-reloj: 180px; --alto-cielo: 84px; --altura-arco: 64px; --tamano-astro: 26px; top: 150px; right: 50%; transform: translateX(50%); }
@@ -1150,7 +1142,6 @@ input[type="checkbox"] { accent-color: var(--esmeralda); width: 18px; height: 18
     .caja-contador { min-width: 0; flex: 1; padding: var(--espacio-2) var(--espacio-4); }
     .caja-contador .label { font-size: 0.85rem; }
     .caja-contador .valor { font-size: 1.9rem; }
-    #btn-chat-ia { bottom: 108px; right: var(--espacio-4); width: 56px; height: 56px; }
     #btn-resultados { bottom: 176px; right: var(--espacio-4); width: 48px; padding: 0; justify-content: center; }   /* solo el ícono, sobre el botón principal */
     #btn-resultados span { display: none; }
     #panel-chat-ia { right: var(--espacio-4); bottom: 236px; width: calc(100% - 32px); max-height: 55vh; }

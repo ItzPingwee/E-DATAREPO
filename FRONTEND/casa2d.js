@@ -211,6 +211,15 @@ const SPRITES = {
     taladro_v: { archivo: 'dispositivos/taladro_v.png', tam: [84, 113], caja: [0, 0, 84, 113], ancho: 18 },   // mira v
     bomba_u: { archivo: 'dispositivos/bomba_u.png', tam: [122, 101], caja: [0, 0, 122, 101], ancho: 30 },   // mira u
     bomba_v: { archivo: 'dispositivos/bomba_v.png', tam: [122, 101], caja: [0, 0, 122, 101], ancho: 30 },   // mira v
+    // Los 7 que antes salían como pin (dibujos sueltos, mismo proceso de recorte). Alturas de pared: 1 m ≈ 46 px (el avatar de 1.7 m mide 79 px).
+    calentador_agua_u: { archivo: 'dispositivos/calentador_agua_u.png', tam: [76, 149], caja: [0, 0, 76, 149], ancho: 26 },    // mira u (panel a la derecha)
+    calentador_agua_v: { archivo: 'dispositivos/calentador_agua_v.png', tam: [101, 200], caja: [0, 0, 101, 200], ancho: 26 },  // mira v (panel a la izquierda)
+    persiana_u: { archivo: 'dispositivos/persiana_u.png', tam: [133, 200], caja: [0, 0, 133, 200], ancho: 34, altura: 40 },     // mira u; ventana a ~0.9 m del suelo
+    persiana_v: { archivo: 'dispositivos/persiana_v.png', tam: [131, 200], caja: [0, 0, 131, 200], ancho: 34, altura: 40 },     // mira v
+    cerradura_u: { archivo: 'dispositivos/cerradura_u.png', tam: [144, 163], caja: [0, 0, 144, 163], ancho: 18, altura: 36 },  // mira u; a la altura de una manija
+    cerradura_v: { archivo: 'dispositivos/cerradura_v.png', tam: [127, 166], caja: [0, 0, 127, 166], ancho: 16, altura: 36 },  // mira v
+    motor_garaje_u: { archivo: 'dispositivos/motor_garaje_u.png', tam: [108, 72], caja: [0, 0, 108, 72], ancho: 40, altura: 72 },  // mira u; arriba, cerca del techo
+    bombillo_v: { archivo: 'dispositivos/bombillo_v.png', tam: [153, 115], caja: [0, 0, 153, 115], ancho: 24, altura: 70 },  // mira v; aplique de pared
 
     avatar_quieto_der:   { archivo: 'avatars/jero_quieto_der_abajo.png',    tam: [184, 263], caja: [49, 9, 144, 242] },
     avatar_quieto_izq:   { archivo: 'avatars/jero_quieto_izq_abajo.png',    tam: [163, 244], caja: [36, 3, 131, 235] },
@@ -427,7 +436,12 @@ const MUEBLES = {
     hidrolavadora: { u: 'hidrolavadora_u', v: 'hidrolavadora_v' },
     soplador: { u: 'soplador_u', v: 'soplador_v' },
     taladro: { u: 'taladro_u', v: 'taladro_v' },
-    bomba: { u: 'bomba_u', v: 'bomba_v' }
+    bomba: { u: 'bomba_u', v: 'bomba_v' },
+    calentador_agua: { u: 'calentador_agua_u', v: 'calentador_agua_v' },
+    persiana: { u: 'persiana_u', v: 'persiana_v' },
+    cerradura: { u: 'cerradura_u', v: 'cerradura_v' },
+    motor_garaje: { u: 'motor_garaje_u' },
+    bombillo: { v: 'bombillo_v' }   // las 3 bombillas del catálogo comparten este dibujo
 };
 
 // Muebles de decoración que a la vez son un dispositivo del catálogo: al instalar ese dispositivo, el mismo dibujo
@@ -940,8 +954,13 @@ function celdasLibresDeHabitacion(hab) {
 // y ficha con sus datos al pasar el mouse.
 // El mouse no se recibe en la <img> sino en una zona transparente ajustada a la parte útil del dibujo: una <img>
 // responde en todo su cuadro, también en lo transparente, y un dispositivo taparía a sus vecinos.
+// Clase CSS del brillo según el estado: la usan los dibujos y los pines
+function claseDeEstado(aparato) {
+    return aparato.dejado_conectado ? 'en-reposo' : 'desconectado';
+}
+
 function hacerDispositivoInteractivo(elemento, aparato, habitacion) {
-    elemento.classList.add('dispositivo-sprite', aparato.dejado_conectado ? 'en-reposo' : 'desconectado');
+    elemento.classList.add('dispositivo-sprite', claseDeEstado(aparato));
 
     const sprite = SPRITES[elemento.dataset.sprite];
     const reflejado = elemento.style.transform.includes('-1');
@@ -966,10 +985,9 @@ function hacerDispositivoInteractivo(elemento, aparato, habitacion) {
 }
 
 // Dibuja un sprite de dispositivo con su ancho en pantalla. Su base (centro-abajo) queda en (x, y).
+// La escala la calcula escalasDeSprite (dentro de agregarSprite): los dispositivos no traen estiramientoY, así que sale sy = sx.
 function agregarSpriteDispositivo(contenedor, nombreSprite, x, y, zIndex, espejo) {
-    const sprite = SPRITES[nombreSprite];
-    const sx = sprite.ancho / (sprite.caja[2] - sprite.caja[0]);
-    return agregarSprite(contenedor, nombreSprite, x, y, 'centro-abajo', zIndex, espejo, { sx, sy: sx });
+    return agregarSprite(contenedor, nombreSprite, x, y, 'centro-abajo', zIndex, espejo);
 }
 
 // Sitios libres sobre los muebles de una habitación (mesón, mesa...). Cada mueble con 'superficie' trae sus puntos.
@@ -1156,8 +1174,7 @@ function dibujarDispositivos(contenedor) {
             const centro = aPantalla(celda.cx + 0.5, celda.cy + 0.5);
 
             const pin = document.createElement('div');
-            const estado = aparato.dejado_conectado ? 'en-reposo' : 'desconectado';
-            pin.className = 'pin-dispositivo ' + estado;
+            pin.className = 'pin-dispositivo ' + claseDeEstado(aparato);
             pin.innerHTML = `<span>${aparato.icono || '🔌'}</span>`;
             pin.style.left = centro.x + 'px';
             pin.style.top = centro.y + 'px';
@@ -1663,33 +1680,25 @@ function bucleAvatar(ahora) {
 requestAnimationFrame(bucleAvatar);
 
 // ----------------------------------------------------
-// 9. PLANO EN TARJETAS (panel «Ver mi casa») + casa isométrica
+// 9. PLANO EN TARJETAS (panel «Mis dispositivos») + casa isométrica
 // ----------------------------------------------------
+// Cada tarjeta de habitación se reescribe entera (= en vez de +=), así no hace falta vaciarlas antes en otro recorrido.
 function renderizarCasa() {
-    habitacionesCreadas.forEach(hab => {
-        const safeId = 'grid-' + hab.replace(/\s+/g, '-');
-        const cont = document.getElementById(safeId);
-        if(cont) cont.innerHTML = '';
-    });
-
     for (const [hab, aparatos] of Object.entries(casaUsuario)) {
-        const safeId = 'grid-' + hab.replace(/\s+/g, '-');
-        const areaPlano = document.getElementById(safeId);
-        if(areaPlano) {
-            aparatos.forEach((ap, index) => {
-                const claseBorde = ap.desconectable ? 'borde-desconectable' : 'borde-fijo';
-                const dotClass = ap.dejado_conectado ? 'dot-on' : 'dot-off';
-                const txtEstado = ap.dejado_conectado ? 'Standby ON' : 'Apagado';
-
-                areaPlano.innerHTML += `
+        const areaPlano = document.getElementById(idDeHabitacion(hab));
+        if (!areaPlano) continue;
+        areaPlano.innerHTML = aparatos.map((ap, index) => {
+            const claseBorde = ap.desconectable ? 'borde-desconectable' : 'borde-fijo';
+            const dotClass = ap.dejado_conectado ? 'dot-on' : 'dot-off';
+            const txtEstado = ap.dejado_conectado ? 'Standby ON' : 'Apagado';
+            return `
                     <div class="icono-aparato ${claseBorde}">
                         <button class="btn-eliminar-aparato" onclick="eliminarDispositivo('${hab}', ${index})" aria-label="Eliminar">×</button>
                         <strong>${ap.nombre}</strong>
                         <span>Activo: ${ap.horas_uso.toFixed(1)} h</span>
                         <span><i class="status-dot ${dotClass}"></i>${txtEstado}</span>
                     </div>`;
-            });
-        }
+        }).join('');
     }
 
     dibujarCasaIsometrica();
